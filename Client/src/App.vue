@@ -1,23 +1,75 @@
 <script>
-import LineChart from './components/LineGraph.vue'
-export default {
-  name: 'App',
-  components: {
-    LineChart
-  },
+import { Line as LineChartGenerator } from 'vue-chartjs'
+  import {
+    Chart as ChartJS,
+    Title,
+    Tooltip,
+    Legend,
+    LineElement,
+    LinearScale,
+    CategoryScale,
+    PointElement
+  } from 'chart.js'
+  
+  ChartJS.register(
+    Title,
+    Tooltip,
+    Legend,
+    LineElement,
+    LinearScale,
+    CategoryScale,
+    PointElement
+  )
+  
+  export default {
+    components: {
+      LineChartGenerator
+    },
+  /**
+   * Data that is used in the program
+   */
   data() {
-    
     return {
-      currentTemp: 0,
-      currLight: true,
-      isAdmin: false,
+      currentTemp: 0, //Current temperature of the given coop
+      currLight: true, //If the current level of light is adequate
+      isAdmin: false, //If user is an admin, if true, can access settings menu
+      chartData: {
+          labels: [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July'
+          ],
+          datasets: [
+            {
+              label: 'Data One',
+              data: [40, 39, 10, 40, 39, 150, 40],
+              borderColor: '#FF0000',
+              backgroundColor: '#FF0000',
+            },
+          ],
+        },
+        chartOptions: {
+          responsive: true,
+          maintainAspectRatio: true,
+        },
     }
   },
+  /**
+   * Runs of the load of the webpage
+   */
   created() {
   },
+  /**
+   * All methods needed to run web app
+   */
   methods: {
     /**
-     * checks if the user is using a mobile device or not
+     * Checks if the user is using a mobile device or not
+     * @returns {bool} true if the device is a mobile phone
      */
     isMobile() {
       if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -26,6 +78,10 @@ export default {
         return false
       }
     },
+    /**
+     * Checks if the light in the chicken coop is adequate or not
+     * @returns {String} "Adequate" or "Too Low" depending on the number given
+     */
     checkLight() {
       if (this.currLight > 5) {
         return "Adequate";
@@ -34,12 +90,21 @@ export default {
         return "Too Low";
       }
     },
+    /**
+     * Opens the settings modal on button click
+     */
     clickSettings() {
 
     },
+    /**
+     * Opens the account modal on button click
+     */
     clickAccount() {
 
     },
+    /**
+     * Opens the notification modal on button click
+     */
     clickNoti() {
 
     }
@@ -71,15 +136,14 @@ export default {
           </b-button-group>
         </b-card>
         <b-card class="bottomCard">
-          <b-card class="optionsCard">
-            <b-button>Options</b-button>
-            <b-button>Options</b-button>
-            <b-button>Options</b-button>
-            <b-button>Options</b-button>
-            <b-button>Options</b-button>
+          <b-card class="optionsCard" header="Graph Options">
+            <div style="align-items: center;">
+            </div>
           </b-card>
-          <LineChart style="width: 40vw; height: 70vh; margin-left: 11.6vw;"/>
-          <b-card class="coopCard">
+          <div class="chart">
+            <LineChartGenerator :chart-options="chartOptions" :chart-data="chartData"/>
+          </div>
+          <b-card class="coopCard" header="Coop View">
             Stuff
           </b-card>
         </b-card>
@@ -97,23 +161,30 @@ export default {
   overflow-y: hidden;
   background-color: #fafafa !important;
 }
-.optionsCard{
-  float: left;
-  width: 10vw;
-  min-height: 70vh;
-  margin-right: 20px;
-  
-}
-.coopCard{
-  flex: 2;
-  width: 10vw;
-  min-height: 50vh;
-  float: right;
 
+.chart {
+  float: left;
+  width: 50%;
+  margin-right: 1%;
 }
+
+.optionsCard {
+  float: left;
+  width: 12.5%;
+  min-height: 70vh;
+  margin-right: 1%;
+}
+
+.coopCard {
+  float: left;
+  width: 35.5%;
+  min-height: 70vh;
+}
+
 .bottomCard {
   display: flex;
-  min-height: 75vh;
+  flex-wrap: wrap;
+  min-height: 70vh;
   margin-top: 2vh;
 }
 
