@@ -4,11 +4,10 @@ import { BootstrapVue, IconsPlugin, AvatarPlugin, ProgressPlugin, ListGroupPlugi
 import 'vuetify/dist/vuetify.min.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-import VueTimeline from "@growthbunker/vuetimeline";
+import { Line } from 'vue-chartjs'
 
-
+Vue.use(Line)
 Vue.config.productionTip = false
-Vue.use(VueTimeline)
 Vue.use(BadgePlugin)
 Vue.use(BootstrapVue)
 Vue.use(AvatarPlugin)

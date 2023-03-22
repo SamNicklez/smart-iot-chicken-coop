@@ -13,7 +13,9 @@
     "bootstrap": "^5.2.3",
     "bootstrap-vue": "^2.23.1",
     "core-js": "^3.8.3",
-    "vue": "^2.7.14"
+    "vue": "^2.7.14",
+    "chart.js": "^3.8.0",
+    "vue-chartjs": "^4.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
@@ -38,7 +40,9 @@
     "parserOptions": {
       "parser": "@babel/eslint-parser"
     },
-    "rules": {}
+    "rules": {
+      "vue/multi-word-component-names": "off"
+    }
   },
   "browserslist": [
     "> 1%",
