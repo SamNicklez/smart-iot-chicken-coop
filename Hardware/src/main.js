@@ -1,7 +1,6 @@
 const fetch = require("node-fetch");
 
-
-testGetRecords();
+makeChickens(10)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,9 +142,9 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function makeChickens(num) {
     for (let n = 0; n < num; n++) {
-        await chickenEntered(n, n, new Date(), n)
+        var date = new Date();
+        await chickenEntered(n, n, n, n)
         await chickenExited(n, n, n)
-        await delay(10000);
     }
 }
 

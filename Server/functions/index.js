@@ -18,6 +18,7 @@ admin.initializeApp({
   databaseURL: "https://iotfinalproject-db88d-default-rtdb.firebaseio.com"});
 const db = admin.firestore();
 
+////////////////////////////////////////////////////////////////////////////////////////////
 // CAMERA
 
 // POST new camera
@@ -51,28 +52,6 @@ app.patch("/api/camera", jsonParser, (req, res) => {
   })();
 });
 
-// GET specific camera info
-app.get("/api/camera/:camera_id", jsonParser, (req, res) => {
-  (async () => {
-    try {
-      const query = db.collection("camera").doc(req.params.camera_id);
-      const response = await query.get().then((querySnapshot) => {
-        const doc = querySnapshot;
-        const selectedItem = {
-          id: req.params.camera_id,
-          box: doc.data().box,
-          coop: doc.data().coop,
-        };
-        return selectedItem;
-      });
-      return res.status(200).send(response);
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send(error);
-    }
-  })();
-});
-
 // GET all camera info
 app.get("/api/camera", (req, res) => {
   (async () => {
@@ -99,6 +78,43 @@ app.get("/api/camera", (req, res) => {
   })();
 });
 
+// GET specific camera info
+app.get("/api/camera/:camera_id", jsonParser, (req, res) => {
+  (async () => {
+    try {
+      const query = db.collection("camera").doc(req.params.camera_id);
+      const response = await query.get().then((querySnapshot) => {
+        const doc = querySnapshot;
+        const selectedItem = {
+          id: req.params.camera_id,
+          box: doc.data().box,
+          coop: doc.data().coop,
+        };
+        return selectedItem;
+      });
+      return res.status(200).send(response);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send(error);
+    }
+  })();
+});
+
+// DELETE camera
+app.delete("/api/camera/:camera_id", jsonParser, (req, res) => {
+  (async () => {
+    try {
+      const document = db.collection("camera").doc(req.params.camera_id);
+      await document.delete();
+      return res.status(200).send();
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send(error);
+    }
+  })();
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////
 // CHICKEN
 
 // POST chicken entering coop
@@ -137,7 +153,7 @@ app.patch("/api/chicken", jsonParser, (req, res) => {
   })();
 });
 
-// GET certain number of chicken data
+// GET chicken data
 app.get("/api/chicken", (req, res) => {
   if (req.query.numberOfRecords == undefined) {
     (async () => {
@@ -196,53 +212,145 @@ app.get("/api/chicken", (req, res) => {
   });
 
 
-// COOP
+  // GET chicken data between 2 dates
+app.get("/api/chicken/dates", (req, res) => {
+    (async () => {
+      try {
+        const query = db.collection("chicken")
+        .orderBy("enter_date", "desc")
+        .startAt(parseInt(req.query.end_date))
+        .endAt(parseInt(req.query.start_date));
+        const response = [];
+        await query.get().then((querySnapshot) => {
+          const docs = querySnapshot.docs;
+          console.log(docs);
+          for (const doc of docs) {
+            const selectedItem = {
+              box: doc.data().box,
+              coop: doc.data().coop,
+              enter_date: doc.data().enter_date,
+              enter_mass: doc.data().enter_mass,
+              exit_date: doc.data().exit_date,
+              exit_mass: doc.data().exit_mass,
+            };
+            response.push(selectedItem);
+          }
+          return response;
+        });
+        return res.status(200).send(response);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      }
+    })();
+  });
 
-// 
+////////////////////////////////////////////////////////////////////////////////////////////
+// BOX
 
-
-
-// create
-app.post("/api/create", (req, res) => {
+// POST box
+app.post("/api/box", jsonParser, (req, res) => {
   (async () => {
     try {
-      await db.collection("items").doc("/" + req.body.id + "/").create({
-        item: req.body.item});
+      await db.collection("box").doc("/" + req.body.box_id + "/").collection("boxData").doc("/" + "init data" + "/").create({})
+      return res.status(200).send();
+    } catch (error) {
+      return res.status(500).send(error);
+    }
+  })();
+});
+
+// POST box info
+app.post("/api/box/:box_id", jsonParser, (req, res) => {
+  (async () => {
+    try {
+      await db.collection("box").doc("/" + req.params.box_id + "/").collection("boxData").doc("/" + req.body.date + "/").create({
+          date: req.body.date,
+          hasEgg: req.body.hasEgg,
+          temperature: req.body.temperature,
+          light: req.body.light,
+        });
       return res.status(200).send();
     } catch (error) {
       console.log(error);
       return res.status(500).send(error);
     }
   })();
-});
+})
 
-// read item
-app.get("/api/read/:item_id", (req, res) => {
+// GET specific box info
+app.get("/api/box/:box_id", (req, res) => {
+  if (req.query.numberOfRecords == undefined) {
+    (async () => {
+      try {
+        const query = db.collection("box").doc("/" + req.params.box_id + "/").collection("boxData").orderBy("date", "desc");
+        const response = [];
+        await query.get().then((querySnapshot) => {
+          const docs = querySnapshot.docs;
+          for (const doc of docs) {
+            const selectedItem = {
+              date: doc.data().date,
+              hasEgg: doc.data().hasEgg,
+              temperature: doc.data().temperature,
+              light: doc.data().light,
+            };
+            response.push(selectedItem);
+          }
+          return response;
+        });
+        return res.status(200).send(response);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      }
+    })();
+  }
+  else {
+    (async () => {
+      try {
+        const query = db.collection("box").doc("/" + req.params.box_id + "/").collection("boxData").orderBy("date", "desc").limit(parseInt(req.query.numberOfRecords));
+        const response = [];
+        await query.get().then((querySnapshot) => {
+          const docs = querySnapshot.docs;
+          for (const doc of docs) {
+            const selectedItem = {
+              date: doc.data().date,
+              hasEgg: doc.data().hasEgg,
+              temperature: doc.data().temperature,
+              light: doc.data().light,
+            };
+            response.push(selectedItem);
+          }
+          return response;
+        });
+        return res.status(200).send(response);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      }
+    })();
+  }
+})
+
+// GET specific box info between 2 dates
+app.get("/api/box/:box_id/dates", (req, res) => {
   (async () => {
     try {
-      const document = db.collection("items").doc(req.params.item_id);
-      const item = await document.get();
-      const response = item.data();
-      return res.status(200).send(response);
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send(error);
-    }
-  })();
-});
-
-// read all
-app.get("/api/read", (req, res) => {
-  (async () => {
-    try {
-      const query = db.collection("items");
+      const query = db.collection("box")
+      .doc("/" + req.params.box_id + "/")
+      .collection("boxData")
+      .orderBy("date", "desc")
+      .startAt(parseInt(req.query.end_date))
+      .endAt(parseInt(req.query.start_date));
       const response = [];
       await query.get().then((querySnapshot) => {
         const docs = querySnapshot.docs;
         for (const doc of docs) {
           const selectedItem = {
-            id: doc.id,
-            item: doc.data().item,
+            date: doc.data().date,
+            hasEgg: doc.data().hasEgg,
+            temperature: doc.data().temperature,
+            light: doc.data().light,
           };
           response.push(selectedItem);
         }
@@ -254,29 +362,13 @@ app.get("/api/read", (req, res) => {
       return res.status(500).send(error);
     }
   })();
-});
+})
 
-// update
-app.put("/api/update/:item_id", (req, res) => {
+// DELETE box
+app.delete("/api/box/:box_id", jsonParser, (req, res) => {
   (async () => {
     try {
-      const document = db.collection("items").doc(req.params.item_id);
-      await document.update({
-        item: req.body.item,
-      });
-      return res.status(200).send();
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send(error);
-    }
-  })();
-});
-
-// delete
-app.delete("/api/delete/:item_id", (req, res) => {
-  (async () => {
-    try {
-      const document = db.collection("items").doc(req.params.item_id);
+      const document = db.collection("box").doc(req.params.box_id);
       await document.delete();
       return res.status(200).send();
     } catch (error) {
@@ -285,5 +377,8 @@ app.delete("/api/delete/:item_id", (req, res) => {
     }
   })();
 });
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
 exports.app = functions.https.onRequest(app);
