@@ -37,9 +37,9 @@ export default {
       endDate: new Date().toLocaleDateString(),
       selectedCheck: [], // Must be an array reference!
       options: [
-        { text: 'Temperature', value: 'temp' },
-        { text: 'Eggs', value: 'egg' },
-        { text: 'Light Level', value: 'light' },
+        { text: '  Temperature', value: 'temp' },
+        { text: '  Eggs', value: 'egg' },
+        { text: '  Light Level', value: 'light' },
       ],
       chartData: {
         labels: [
@@ -124,13 +124,13 @@ export default {
     /**
      * function that is called when a Graph option checkbox is ticked
      */
-    checkboxChange(){
+    checkboxChange() {
       //determine which checboxes are ticked
     },
     /**
      * function that is called when a graph option datebox is selected
      */
-    dateChange(){
+    dateChange() {
       //Determine what data we want
       //API Call to grab shit between the two dates
       //Need to calculate correct range of data to put stuff in
@@ -141,7 +141,7 @@ export default {
 </script>
 
 <template>
-  <div v-if="!isMobile()">
+  <div v-if="!isMobile()" class="TextChange">
     <b-modal id="startupModal" title="logIn">
       stuff
     </b-modal>
@@ -152,20 +152,23 @@ export default {
       even more stuff
     </b-modal>
     <b-modal id="settingsModal" title="Settings">
-    <p class="my-4">Hello from modal!</p>
+      <p class="my-4">Hello from modal!</p>
     </b-modal>
     <b-sidebar id="graphSettingsSidebar" title="Graph Settings" shadow>
       <div class="px-3 py-2">
         <div style="align-items: center; text-align: center;">
-              <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="this.subtractSeven(new Date())"
-                :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="startDate" size="sm"
-                style="font-size: 1.5vw;"></b-form-datepicker>
-              To
-              <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="new Date().toLocaleDateString()"
-                :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="endDate" size="sm"
-                style="font-size: 1.5vw;"></b-form-datepicker>
-              <b-form-checkbox-group @input="checkboxChange" style="text-align: left; margin-top: 0.5vh;" size="lg" id="graphOptions" v-model="selectedCheck" :options="options"></b-form-checkbox-group>
-            </div>
+          Date Range:
+          <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="this.subtractSeven(new Date())"
+            :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="startDate" size="sm"
+            style="font-size: 1.5vw;"></b-form-datepicker>
+          To
+          <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="new Date().toLocaleDateString()"
+            :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="endDate" size="sm"
+            style="font-size: 1.5vw; margin-bottom: 5vh;"></b-form-datepicker>
+          Display Information:
+          <b-form-checkbox-group @input="checkboxChange" style="text-align: left ;" size="lg"
+            id="graphOptions" v-model="selectedCheck" :options="options" stacked switches></b-form-checkbox-group>
+        </div>
       </div>
     </b-sidebar>
     <div class="mainContainer">
@@ -207,6 +210,10 @@ export default {
 </template>
 
 <style>
+.TextChange {
+  font-family: "Verdana", Times, Sans-serif;
+}
+
 .mainContainer {
   min-height: 100vh;
   overflow-y: hidden;
@@ -243,7 +250,6 @@ export default {
 
 .topCard {
   display: block;
-  font-family: "Verdana", Times, Sans-serif;
   background-color: #fafafa !important;
 }
 </style>
