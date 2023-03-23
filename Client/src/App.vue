@@ -1,30 +1,30 @@
 <script>
 import { Line as LineChartGenerator } from 'vue-chartjs'
-  import {
-    Chart as ChartJS,
-    Title,
-    Tooltip,
-    Legend,
-    LineElement,
-    LinearScale,
-    CategoryScale,
-    PointElement
-  } from 'chart.js'
-  
-  ChartJS.register(
-    Title,
-    Tooltip,
-    Legend,
-    LineElement,
-    LinearScale,
-    CategoryScale,
-    PointElement
-  )
-  
-  export default {
-    components: {
-      LineChartGenerator
-    },
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement
+} from 'chart.js'
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement
+)
+
+export default {
+  components: {
+    LineChartGenerator
+  },
   /**
    * Data that is used in the program
    */
@@ -33,35 +33,57 @@ import { Line as LineChartGenerator } from 'vue-chartjs'
       currentTemp: 0, //Current temperature of the given coop
       currLight: true, //If the current level of light is adequate
       isAdmin: false, //If user is an admin, if true, can access settings menu
+      startDate: this.subtractSeven(new Date()),
+      endDate: new Date().toLocaleDateString(),
+      selectedCheck: [], // Must be an array reference!
+      options: [
+        { text: 'Temperature', value: 'temp' },
+        { text: 'Eggs', value: 'egg' },
+        { text: 'Light Level', value: 'light' },
+      ],
       chartData: {
-          labels: [
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July'
-          ],
-          datasets: [
-            {
-              label: 'Data One',
-              data: [40, 39, 10, 40, 39, 150, 40],
-              borderColor: '#FF0000',
-              backgroundColor: '#FF0000',
-            },
-          ],
-        },
-        chartOptions: {
-          responsive: true,
-          maintainAspectRatio: true,
-        },
+        labels: [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July'
+        ],
+        datasets: [
+          {
+            label: 'Temperature',
+            data: [70, 68, 65, 75, 78, 76, 77],
+            borderColor: '#ffa600',
+            backgroundColor: '#003f5c',
+          },
+          {
+            label: 'Eggs',
+            data: [1, 3, 5, 2, 7, 1, 5],
+            borderColor: '#a05195',
+            backgroundColor: '#d45087',
+          },
+          {
+            label: 'Light Level',
+            data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
+            borderColor: '#2f4b7c',
+            backgroundColor: '#f95d6a',
+          },
+        ],
+      },
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: true,
+        tension: .35,
+      },
     }
   },
   /**
    * Runs of the load of the webpage
    */
   created() {
+    //should grab the weekly statistics of temperature, eggs and light level
   },
   /**
    * All methods needed to run web app
@@ -91,22 +113,28 @@ import { Line as LineChartGenerator } from 'vue-chartjs'
       }
     },
     /**
-     * Opens the settings modal on button click
+     * 
+     * @param {DateTime} date is the date we want to subtract seven days from
+     * @returns {string} The date in MM/DD/YYYY format with 7 days taken off
      */
-    clickSettings() {
-
+    subtractSeven(date) {
+      date.setDate(date.getDate() - 7);
+      return date.toLocaleDateString()
     },
     /**
-     * Opens the account modal on button click
+     * function that is called when a Graph option checkbox is ticked
      */
-    clickAccount() {
-
+    checkboxChange(){
+      //determine which checboxes are ticked
     },
     /**
-     * Opens the notification modal on button click
+     * function that is called when a graph option datebox is selected
      */
-    clickNoti() {
-
+    dateChange(){
+      //Determine what data we want
+      //API Call to grab shit between the two dates
+      //Need to calculate correct range of data to put stuff in
+      //set the datasets equal to it
     }
   },
 }
@@ -114,14 +142,40 @@ import { Line as LineChartGenerator } from 'vue-chartjs'
 
 <template>
   <div v-if="!isMobile()">
+    <b-modal id="startupModal" title="logIn">
+      stuff
+    </b-modal>
+    <b-modal id="accountModal" title="Account Information">
+      more stuff
+    </b-modal>
+    <b-modal id="notificationModal">
+      even more stuff
+    </b-modal>
+    <b-modal id="settingsModal" title="Settings">
+    <p class="my-4">Hello from modal!</p>
+    </b-modal>
+    <b-sidebar id="graphSettingsSidebar" title="Graph Settings" shadow>
+      <div class="px-3 py-2">
+        <div style="align-items: center; text-align: center;">
+              <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="this.subtractSeven(new Date())"
+                :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="startDate" size="sm"
+                style="font-size: 1.5vw;"></b-form-datepicker>
+              To
+              <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="new Date().toLocaleDateString()"
+                :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="endDate" size="sm"
+                style="font-size: 1.5vw;"></b-form-datepicker>
+              <b-form-checkbox-group @input="checkboxChange" style="text-align: left; margin-top: 0.5vh;" size="lg" id="graphOptions" v-model="selectedCheck" :options="options"></b-form-checkbox-group>
+            </div>
+      </div>
+    </b-sidebar>
     <div class="mainContainer">
       <b-card class="mainCard">
         <b-card class="topCard">
           <b-button-group style="float: right; position: relative;">
             <b-list-group horizontal="md" style="margin-right: 6vw;">
-              <b-list-group-item style="font-size: 1.5vw; width: 25vw;">Currernt Temperature: {{ this.currentTemp
+              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw;">Currernt Temperature: {{ this.currentTemp
               }}&#x2109;</b-list-group-item>
-              <b-list-group-item style="font-size: 1.5vw; width: 25vw">Currernt Light Level: {{ this.checkLight()
+              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw">Currernt Light Level: {{ this.checkLight()
               }}</b-list-group-item>
             </b-list-group>
             <b-button @click="clickSettings" variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
@@ -136,12 +190,9 @@ import { Line as LineChartGenerator } from 'vue-chartjs'
           </b-button-group>
         </b-card>
         <b-card class="bottomCard">
-          <b-card class="optionsCard" header="Graph Options">
-            <div style="align-items: center;">
-            </div>
-          </b-card>
           <div class="chart">
-            <LineChartGenerator :chart-options="chartOptions" :chart-data="chartData"/>
+            <b-button v-b-toggle.graphSettingsSidebar>Graph Options</b-button>
+            <LineChartGenerator :chart-options="chartOptions" :chart-data="chartData" />
           </div>
           <b-card class="coopCard" header="Coop View">
             Stuff
@@ -164,20 +215,12 @@ import { Line as LineChartGenerator } from 'vue-chartjs'
 
 .chart {
   float: left;
-  width: 50%;
-  margin-right: 1%;
-}
-
-.optionsCard {
-  float: left;
-  width: 12.5%;
-  min-height: 70vh;
-  margin-right: 1%;
+  width: 60%;
 }
 
 .coopCard {
-  float: left;
-  width: 35.5%;
+  float: right;
+  width: 38%;
   min-height: 70vh;
 }
 

@@ -5,7 +5,10 @@ import 'vuetify/dist/vuetify.min.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import { Line } from 'vue-chartjs'
+import { FormDatepickerPlugin } from 'bootstrap-vue'
 
+
+Vue.use(FormDatepickerPlugin)
 Vue.use(Line)
 Vue.config.productionTip = false
 Vue.use(BadgePlugin)
