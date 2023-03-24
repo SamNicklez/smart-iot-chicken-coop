@@ -1,5 +1,7 @@
 const fetch = require("node-fetch");
 
+const URL = "http://172.17.38.134:5000/"
+
 makeChickens(10)
 
 
@@ -7,7 +9,7 @@ makeChickens(10)
 // CAMERA
 
 async function createCamera(id, box, coop) {
-    fetch("http://172.17.9.55:5000/api/camera", {
+    fetch(URL + "api/camera", {
         method: 'POST',
         body: JSON.stringify({
             id: id,
@@ -21,7 +23,7 @@ async function createCamera(id, box, coop) {
 }
 
 async function editCamera(id, box, coop) {
-    fetch("http://172.17.9.55:5000/api/camera", {
+    fetch(URL + "api/camera", {
         method: 'PATCH',
         body: JSON.stringify({
             id: id,
@@ -35,7 +37,7 @@ async function editCamera(id, box, coop) {
 }
 
 async function getOneCamera(id) {
-    var response = await fetch(`http://172.17.9.55:5000/api/camera/${id}`, {
+    var response = await fetch(URL + `api/camera/${id}`, {
         method: 'GET',
         headers: {
             "Content-type": "application/json"
@@ -46,7 +48,7 @@ async function getOneCamera(id) {
 }
 
 async function getCameras() {
-    var response = await fetch(`http://172.17.9.55:5000/api/camera`, {
+    var response = await fetch(URL + `api/camera`, {
         method: 'GET',
         headers: {
             "Content-type": "application/json"
@@ -61,7 +63,7 @@ async function getCameras() {
 // CHICKEN
 
 async function chickenEntered(box, coop, enter_date, enter_mass) {
-    fetch("http://172.17.9.55:5000/api/chicken", {
+    fetch(URL + "api/chicken", {
         method: 'POST',
         body: JSON.stringify({
             box: box,
@@ -76,7 +78,7 @@ async function chickenEntered(box, coop, enter_date, enter_mass) {
 }
 
 async function chickenExited(enter_date, exit_date, exit_mass) {
-    fetch("http://172.17.9.55:5000/api/chicken", {
+    fetch(URL + "api/chicken", {
         method: 'PATCH',
         body: JSON.stringify({
             enter_date: enter_date,
@@ -90,7 +92,7 @@ async function chickenExited(enter_date, exit_date, exit_mass) {
 }
 
 async function getNumRecords(num) {
-    var response = await fetch(`http://172.17.9.55:5000/api/chicken/?numberOfRecords=${num}`, {
+    var response = await fetch(URL + `api/chicken/?numberOfRecords=${num}`, {
         method: 'GET',
         headers: {
             "Content-type": "application/json"
@@ -101,7 +103,7 @@ async function getNumRecords(num) {
 }
 
 async function getRecords() {
-    var response = await fetch("http://172.17.9.55:5000/api/chicken", {
+    var response = await fetch(URL + "api/chicken", {
         method: 'GET',
         headers: {
             "Content-type": "application/json"

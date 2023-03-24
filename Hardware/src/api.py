@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime
 
-url = "http://172.17.9.55:5000/"
+URL = "http://172.17.38.134:5000/"
 
 def chickenEntered(box: int, coop: str, mass: int):
     body = {
@@ -10,7 +10,7 @@ def chickenEntered(box: int, coop: str, mass: int):
         "enter_date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "enter_mass": mass,
     }
-    requests.post(url=url+"api/chicken", json=body)
+    requests.post(url=URL+"api/chicken", json=body)
 
 def chickenExited(enter_date: str, exit_mass: int):
     body = {
@@ -18,7 +18,7 @@ def chickenExited(enter_date: str, exit_mass: int):
         "exit_date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "exit_mass": exit_mass,
     }
-    requests.patch(url=url+"api/chicken", json=body)
+    requests.patch(url=URL+"api/chicken", json=body)
 
 def postBoxData(box_id: int, hasEgg: bool, temperature: int, light: int):
     body = {
@@ -27,7 +27,7 @@ def postBoxData(box_id: int, hasEgg: bool, temperature: int, light: int):
         "temperature": temperature,
         "light": light,
     }
-    requests.post(url=url + f"api/box/{box_id}", json=body)
+    requests.post(url=URL + f"api/box/{box_id}", json=body)
 
 postBoxData(box_id=1, hasEgg=True, temperature=32, light=45)
 
