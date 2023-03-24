@@ -31,11 +31,29 @@ export default {
   data() {
     return {
       currentTemp: 0, //Current temperature of the given coop
+      currentTempDataset: { //The current dataset needed for graph
+        label: 'Temperature',
+        data: [70, 68, 65, 75, 78, 76, 77],
+        borderColor: '#ffa600',
+        backgroundColor: '#003f5c',
+      },
       currLight: true, //If the current level of light is adequate
+      currentLightDataset: { //The current dataset needed for graph
+        label: 'Light Level',
+        data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
+        borderColor: '#2f4b7c',
+        backgroundColor: '#f95d6a',
+      },
+      currentEggDataset: { //The current dataset needed for graph
+        label: 'Eggs',
+        data: [1, 3, 5, 2, 7, 1, 5],
+        borderColor: '#a05195',
+        backgroundColor: '#d45087',
+      },
       isAdmin: false, //If user is an admin, if true, can access settings menu
       startDate: this.subtractSeven(new Date()),
       endDate: new Date().toLocaleDateString(),
-      selectedCheck: [], // Must be an array reference!
+      selectedCheck: ['temp', 'egg', 'light'], // Must be an array reference!
       options: [
         { text: '  Temperature', value: 'temp' },
         { text: '  Eggs', value: 'egg' },
@@ -126,6 +144,16 @@ export default {
      */
     checkboxChange() {
       //determine which checboxes are ticked
+      this.chartData.datasets = [];
+      if (this.selectedCheck.includes('temp')) {
+        this.chartData.datasets.push(this.currentTempDataset);
+      }
+      if (this.selectedCheck.includes('egg')) {
+        this.chartData.datasets.push(this.currentEggDataset);
+      }
+      if (this.selectedCheck.includes('light')) {
+        this.chartData.datasets.push(this.currentLightDataset);
+      }
     },
     /**
      * function that is called when a graph option datebox is selected
@@ -148,7 +176,7 @@ export default {
     <b-modal id="accountModal" title="Account Information">
       more stuff
     </b-modal>
-    <b-modal id="notificationModal">
+    <b-modal id="notificationModal" title="Notifications">
       even more stuff
     </b-modal>
     <b-modal id="settingsModal" title="Settings">
@@ -166,8 +194,8 @@ export default {
             :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="endDate" size="sm"
             style="font-size: 1.5vw; margin-bottom: 5vh;"></b-form-datepicker>
           Display Information:
-          <b-form-checkbox-group @input="checkboxChange" style="text-align: left ;" size="lg"
-            id="graphOptions" v-model="selectedCheck" :options="options" stacked switches></b-form-checkbox-group>
+          <b-form-checkbox-group @input="checkboxChange" style="text-align: left ;" size="lg" id="graphOptions"
+            v-model="selectedCheck" :options="options" stacked switches></b-form-checkbox-group>
         </div>
       </div>
     </b-sidebar>
@@ -181,13 +209,14 @@ export default {
               <b-list-group-item style="font-size: 1.3vw; width: 22.5vw">Currernt Light Level: {{ this.checkLight()
               }}</b-list-group-item>
             </b-list-group>
-            <b-button @click="clickSettings" variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
+            <b-button v-b-modal.settingsModal variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
               <b-icon icon="tools"></b-icon> Settings
             </b-button>
-            <b-button @click="clickAccount" variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
+            <b-button v-b-modal.accountModal variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
               <b-icon icon="person-fill"></b-icon> Account
             </b-button>
-            <b-button @click="clickNoti" variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
+            <b-button v-b-modal.notificationModal variant="outline-primary" size="sm"
+              style="width:10vw; font-size: 1.1vw">
               <b-icon icon="inbox-fill"></b-icon> Notifications
             </b-button>
           </b-button-group>
