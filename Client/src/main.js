@@ -1,12 +1,13 @@
 import Vue from 'vue'
 import App from './App.vue'
-import { BootstrapVue, IconsPlugin, AvatarPlugin, ProgressPlugin, ListGroupPlugin, BadgePlugin, SidebarPlugin,FormDatepickerPlugin, FormCheckboxPlugin} from 'bootstrap-vue'
+import { BootstrapVue, IconsPlugin, AvatarPlugin, ProgressPlugin, ListGroupPlugin, BadgePlugin, SidebarPlugin,FormDatepickerPlugin, FormCheckboxPlugin, ModalPlugin, FormInputPlugin} from 'bootstrap-vue'
 import 'vuetify/dist/vuetify.min.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import { Line } from 'vue-chartjs'
 
-
+Vue.use(ModalPlugin)
+Vue.use(FormInputPlugin)
 Vue.use(FormCheckboxPlugin)
 Vue.use(SidebarPlugin)
 Vue.use(FormDatepickerPlugin)

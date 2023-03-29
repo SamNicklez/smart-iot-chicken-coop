@@ -31,6 +31,7 @@ export default {
   data() {
     return {
       currentTemp: 0, //Current temperature of the given coop
+      boxes: 2, //Number of boxes in coop
       currentTempDataset: { //The current dataset needed for graph
         label: 'Temperature',
         data: [70, 68, 65, 75, 78, 76, 77],
@@ -100,8 +101,12 @@ export default {
   /**
    * Runs of the load of the webpage
    */
+  mounted(){
+    this.$refs['startupModal'].show()
+  },
   created() {
     //should grab the weekly statistics of temperature, eggs and light level
+
   },
   /**
    * All methods needed to run web app
@@ -170,8 +175,11 @@ export default {
 
 <template>
   <div v-if="!isMobile()" class="TextChange">
-    <b-modal id="startupModal" title="logIn">
-      stuff
+    <b-modal ref="startupModal" id="startupModal" title="Login" hide-footer="true" size="lg">
+      <b-form-input v-model="text" placeholder="Chicken ID" style="margin-top: 1vw; margin-bottom: 1vw;"></b-form-input>
+      <b-form-input v-model="text" placeholder="Username" style="margin-bottom: 1vw"></b-form-input>
+      <b-button>Set up</b-button>
+
     </b-modal>
     <b-modal id="accountModal" title="Account Information">
       more stuff
