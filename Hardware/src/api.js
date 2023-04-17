@@ -1,6 +1,6 @@
 URL = "http://172.17.38.134:5000/"
 
-async function chckenEntered(box, coop, mass) {
+async function chickenEntered(box, coop, mass) {
     body = {
         "box": box,
         "coop": coop,
@@ -18,7 +18,7 @@ async function chckenEntered(box, coop, mass) {
     return json;
 }
 
-async function chckenExited(enter_date, exit_mass) {
+async function chickenExited(enter_date, exit_mass) {
     body = {
         "enter_date": enter_date,
         "exit_date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -35,12 +35,13 @@ async function chckenExited(enter_date, exit_mass) {
     return json;
 }
 
-async function postBoxData(box_id, hasEgg, temperature, light) {
+async function postBoxData(box_id, hasEgg, temperature, light, humidity) {
     body = {
         "date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "hasEgg": hasEgg,
         "temperature": temperature,
         "light": light,
+        "humidity": humidity,
     }
     const response = await fetch(URL+"api/box/"+box_id, {
         method: 'POST',

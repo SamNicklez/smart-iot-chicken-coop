@@ -302,6 +302,7 @@ app.post("/api/box/:box_id", jsonParser, (req, res) => {
           hasEgg: req.body.hasEgg,
           temperature: req.body.temperature,
           light: req.body.light,
+          humidity: req.body.humidity
         });
       return res.status(200).send();
     } catch (error) {
@@ -326,6 +327,7 @@ app.get("/api/box/:box_id", (req, res) => {
               hasEgg: doc.data().hasEgg,
               temperature: doc.data().temperature,
               light: doc.data().light,
+              humidity: doc.data().humidity
             };
             response.push(selectedItem);
           }
@@ -351,6 +353,7 @@ app.get("/api/box/:box_id", (req, res) => {
               hasEgg: doc.data().hasEgg,
               temperature: doc.data().temperature,
               light: doc.data().light,
+              humidity: doc.data().humidity
             };
             response.push(selectedItem);
           }
@@ -385,6 +388,7 @@ app.get("/api/box/:box_id/dates", (req, res) => {
               hasEgg: doc.data().hasEgg,
               temperature: doc.data().temperature,
               light: doc.data().light,
+              humidity: doc.data().humidity
             };
             response.push(selectedItem);
           }
@@ -416,6 +420,7 @@ app.get("/api/box/:box_id/dates", (req, res) => {
               hasEgg: doc.data().hasEgg,
               temperature: doc.data().temperature,
               light: doc.data().light,
+              humidity: doc.data().humiditys
             };
             response.push(selectedItem);
           }
