@@ -214,6 +214,7 @@ app.get("/api/chicken", (req, res) => {
 
   // GET chicken data between 2 dates
 app.get("/api/chicken/dates", (req, res) => {
+  if (req.query.numberOfRecords == undefined) {
     (async () => {
       try {
         const query = db.collection("chicken")
@@ -243,6 +244,38 @@ app.get("/api/chicken/dates", (req, res) => {
         return res.status(500).send(error);
       }
     })();
+  }
+  else {
+    (async () => {
+      try {
+        const query = db.collection("chicken")
+        .orderBy("enter_date", "desc")
+        .startAt(parseInt(req.query.end_date))
+        .endAt(parseInt(req.query.start_date))
+        .limit(parseInt(req.query.numberOfRecords));
+        const response = [];
+        await query.get().then((querySnapshot) => {
+          const docs = querySnapshot.docs;
+          for (const doc of docs) {
+            const selectedItem = {
+              box: doc.data().box,
+              coop: doc.data().coop,
+              enter_date: doc.data().enter_date,
+              enter_mass: doc.data().enter_mass,
+              exit_date: doc.data().exit_date,
+              exit_mass: doc.data().exit_mass,
+            };
+            response.push(selectedItem);
+          }
+          return response;
+        });
+        return res.status(200).send(response);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      }
+    })();
+  }
   });
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -334,35 +367,68 @@ app.get("/api/box/:box_id", (req, res) => {
 
 // GET specific box info between 2 dates
 app.get("/api/box/:box_id/dates", (req, res) => {
-  (async () => {
-    try {
-      const query = db.collection("box")
-      .doc("/" + req.params.box_id + "/")
-      .collection("boxData")
-      .orderBy("date", "desc")
-      .startAt(parseInt(req.query.end_date))
-      .endAt(parseInt(req.query.start_date));
-      const response = [];
-      await query.get().then((querySnapshot) => {
-        const docs = querySnapshot.docs;
-        for (const doc of docs) {
-          const selectedItem = {
-            date: doc.data().date,
-            hasEgg: doc.data().hasEgg,
-            temperature: doc.data().temperature,
-            light: doc.data().light,
-          };
-          response.push(selectedItem);
-        }
-        return response;
-      });
-      return res.status(200).send(response);
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send(error);
-    }
-  })();
-})
+  if (req.query.numberOfRecords == undefined) {
+    (async () => {
+      try {
+        const query = db.collection("box")
+        .doc("/" + req.params.box_id + "/")
+        .collection("boxData")
+        .orderBy("date", "desc")
+        .startAt(parseInt(req.query.end_date))
+        .endAt(parseInt(req.query.start_date));
+        const response = [];
+        await query.get().then((querySnapshot) => {
+          const docs = querySnapshot.docs;
+          for (const doc of docs) {
+            const selectedItem = {
+              date: doc.data().date,
+              hasEgg: doc.data().hasEgg,
+              temperature: doc.data().temperature,
+              light: doc.data().light,
+            };
+            response.push(selectedItem);
+          }
+          return response;
+        });
+        return res.status(200).send(response);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      }
+    })();
+  }
+  else {
+    (async () => {
+      try {
+        const query = db.collection("box")
+        .doc("/" + req.params.box_id + "/")
+        .collection("boxData")
+        .orderBy("date", "desc")
+        .startAt(parseInt(req.query.end_date))
+        .endAt(parseInt(req.query.start_date))
+        .limit(parseInt(req.query.numberOfRecords));
+        const response = [];
+        await query.get().then((querySnapshot) => {
+          const docs = querySnapshot.docs;
+          for (const doc of docs) {
+            const selectedItem = {
+              date: doc.data().date,
+              hasEgg: doc.data().hasEgg,
+              temperature: doc.data().temperature,
+              light: doc.data().light,
+            };
+            response.push(selectedItem);
+          }
+          return response;
+        });
+        return res.status(200).send(response);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      }
+    })();
+  }
+  })
 
 // DELETE box
 app.delete("/api/box/:box_id", jsonParser, (req, res) => {
