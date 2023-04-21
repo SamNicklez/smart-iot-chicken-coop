@@ -1,6 +1,6 @@
-const fetch = require("node-fetch");
+import fetch from 'node-fetch'
 
-const URL = "http://172.17.38.134:5000/"
+const URL = "https://coop-final-project.glitch.me/"
 
 makeChickens(10)
 
@@ -118,6 +118,25 @@ async function getRecords() {
 
 ////////////////////////////////////////////////////////////
 // TESTS
+
+async function postBoxData(box_id, hasEgg, temperature, light, humidity) {
+    body = {
+        "date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "hasEgg": hasEgg,
+        "temperature": temperature,
+        "light": light,
+        "humidity": humidity,
+    }
+    const response = await fetch(URL+"api/box/"+box_id, {
+        method: 'POST',
+        body: body,
+        headers: {
+            'Content-Type': 'application/json'
+          }
+    });
+    const json = await response.json();
+    return json;
+}
 
 async function testChicken(){
     var coop = "coop1"
