@@ -5,10 +5,10 @@ const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json()
 const cors = require("cors");
 const app = express();
-app.use(cors({origin: true}));
+app.use(cors({origin: '*'}));
 const socket = require("socket.io");
 
-const listener = app.listen(5000, "172.17.38.134", () => {
+const listener = app.listen(8080, "172.20.10.3", () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
 
@@ -129,6 +129,7 @@ app.post("/api/chicken", jsonParser, (req, res) => {
         enter_mass: req.body.enter_mass,
         exit_mass: null,
       });
+      console.log("CHICKEN ENTERED");
       return res.status(200).send();
     } catch (error) {
       return res.status(500).send(error);
