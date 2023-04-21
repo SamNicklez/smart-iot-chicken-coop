@@ -10,7 +10,6 @@ import {
   CategoryScale,
   PointElement
 } from 'chart.js'
-
 ChartJS.register(
   Title,
   Tooltip,
@@ -51,7 +50,12 @@ export default {
         borderColor: '#a05195',
         backgroundColor: '#d45087',
       },
+      text: null,
       isAdmin: false, //If user is an admin, if true, can access settings menu
+      getRequestOptions: {
+        method: 'GET',
+        redirect: 'follow'
+      },
       startDate: this.subtractSeven(new Date()),
       endDate: new Date().toLocaleDateString(),
       selectedCheck: ['temp', 'egg', 'light'], // Must be an array reference!
@@ -95,14 +99,16 @@ export default {
         responsive: true,
         maintainAspectRatio: true,
         tension: .35,
+        spanGaps: true,
       },
     }
   },
   /**
    * Runs of the load of the webpage
    */
-  mounted(){
-    this.$refs['startupModal'].show()
+  mounted() {
+
+    //this.$refs['startupModal'].show()
   },
   created() {
     //should grab the weekly statistics of temperature, eggs and light level
@@ -152,12 +158,26 @@ export default {
       this.chartData.datasets = [];
       if (this.selectedCheck.includes('temp')) {
         this.chartData.datasets.push(this.currentTempDataset);
+
+      fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+        .then(response => response.json()).then(result => this.temperatureFilter(result))
+        .catch(error => console.log('error', error));
       }
       if (this.selectedCheck.includes('egg')) {
         this.chartData.datasets.push(this.currentEggDataset);
       }
       if (this.selectedCheck.includes('light')) {
         this.chartData.datasets.push(this.currentLightDataset);
+      }
+    },
+    temperatureFilter(json){
+      //this.chartData.labels = [];
+      this.chartData.datasets[0].data = [];
+      for(var i = 0; i < json.length; i++){
+        console.log(json[i])
+        //this.chartData.labels += json[i]['date']
+        console.log(json[i]['temperature'])
+        this.chartData.datasets[0].data.push(json[i]['temperature'])
       }
     },
     /**
@@ -175,11 +195,10 @@ export default {
 
 <template>
   <div v-if="!isMobile()" class="TextChange">
-    <b-modal ref="startupModal" id="startupModal" title="Login" hide-footer="true" size="lg">
+    <b-modal ref="startupModal" id="startupModal" title="Login" :hide-footer="true" size="lg">
       <b-form-input v-model="text" placeholder="Chicken ID" style="margin-top: 1vw; margin-bottom: 1vw;"></b-form-input>
       <b-form-input v-model="text" placeholder="Username" style="margin-bottom: 1vw"></b-form-input>
       <b-button>Set up</b-button>
-
     </b-modal>
     <b-modal id="accountModal" title="Account Information">
       more stuff

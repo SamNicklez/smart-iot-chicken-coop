@@ -1,6 +1,6 @@
-const fetch = require("node-fetch");
+import fetch from 'node-fetch'
 
-const URL = "http://coop-final-project.glitch.me/"
+const URL = "https://coop-final-project.glitch.me/"
 
 testPostBox();
 

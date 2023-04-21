@@ -12,9 +12,11 @@
     "@growthbunker/vuetimeline": "^0.1.17",
     "bootstrap": "^5.2.3",
     "bootstrap-vue": "^2.23.1",
-    "core-js": "^3.8.3",
-    "vue": "^2.7.14",
     "chart.js": "^3.8.0",
+    "core-js": "^3.8.3",
+    "cors": "^2.8.5",
+    "nodejs": "^0.0.0",
+    "vue": "^2.7.14",
     "vue-chartjs": "^4.0.0"
   },
   "devDependencies": {
