@@ -53,6 +53,7 @@ export default {
       },
       text: null,
       isAdmin: false, //If user is an admin, if true, can access settings menu
+      sliderValue: 65,
       getRequestOptions: {
         method: 'GET',
         redirect: 'follow'
@@ -361,6 +362,9 @@ export default {
       }
       return newVal;
     },
+    setTempThresh(){
+      console.log("HITY")
+    }
 
   },
 }
@@ -382,12 +386,14 @@ export default {
     <b-modal id="settingsModal" hide-footer title="Settings">
       <div>
         <b style="text-align: center;">Light</b>
-        <b-button variant="danger" size="lg"
+        <b-button variant="danger" size="md"
           style="margin-left: 5vw; min-width: 10vw; margin-right: 2.5vw;">Off</b-button>
-        <b-button variant="success" size="lg" style="min-width: 10vw;">On</b-button>
+        <b-button variant="success" size="md" style="min-width: 10vw;">On</b-button>
       </div>
-      <div style="padding-top: 2.5vh;">
+      <div style="padding-top: 5vh;">
         <b>Set temperature threshold:</b>
+        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="sliderValue" type="range" min="0" max="100" value="65" class="slider" />
+        {{ this.sliderValue }}&#x2109;
       </div>
 
     </b-modal>
@@ -404,7 +410,7 @@ export default {
               Month</b-form-radio>
           </b-form-group>
           Display Information:
-          <b-form-checkbox-group @input="updateGraph" style="text-align: left ;" size="lg" id="graphOptions"
+          <b-form-checkbox-group change="updateGraph" style="text-align: left ;" size="lg" id="graphOptions"
             v-model="selectedCheck" :options="options" stacked switches></b-form-checkbox-group>
         </div>
       </div>
