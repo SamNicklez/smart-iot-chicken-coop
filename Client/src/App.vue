@@ -31,6 +31,7 @@ export default {
     return {
       currentTemp: 0, //Current temperature of the given coop
       boxes: 2, //Number of boxes in coop
+      isCelc: true, //gives us current units C or F
       currentTempDataset: { //The current dataset needed for graph
         label: 'Temperature',
         data: [70, 68, 65, 75, 78, 76, 77],
@@ -39,7 +40,7 @@ export default {
       },
       currLight: true, //If the current level of light is adequate
       currentLightDataset: { //The current dataset needed for graph
-        label: 'Light Level',
+        label: 'Humidity',
         data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
         borderColor: '#2f4b7c',
         backgroundColor: '#f95d6a',
@@ -56,13 +57,13 @@ export default {
         method: 'GET',
         redirect: 'follow'
       },
-      startDate: this.subtractSeven(new Date()),
-      endDate: new Date().toLocaleDateString(),
-      selectedCheck: ['temp', 'egg', 'light'], // Must be an array reference!
+      selectedCheck: ['temp', 'egg', 'humidity'], // Must be an array reference!
+      selected: 1,
+      DOW: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
       options: [
         { text: '  Temperature', value: 'temp' },
         { text: '  Eggs', value: 'egg' },
-        { text: '  Light Level', value: 'light' },
+        { text: '  Humidity', value: 'humidity' },
       ],
       chartData: {
         labels: [
@@ -88,7 +89,7 @@ export default {
             backgroundColor: '#d45087',
           },
           {
-            label: 'Light Level',
+            label: 'Humidity',
             data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
             borderColor: '#2f4b7c',
             backgroundColor: '#f95d6a',
@@ -109,9 +110,8 @@ export default {
   mounted() {
 
     //this.$refs['startupModal'].show()
-  },
-  created() {
-    //should grab the weekly statistics of temperature, eggs and light level
+
+    //(1°C × 9/5) + 32
 
   },
   /**
@@ -134,7 +134,7 @@ export default {
      * @returns {String} "Adequate" or "Too Low" depending on the number given
      */
     checkLight() {
-      if (this.currLight > 5) {
+      if (this.currLight >= 1) {
         return "Adequate";
       }
       else {
@@ -142,53 +142,226 @@ export default {
       }
     },
     /**
-     * 
-     * @param {DateTime} date is the date we want to subtract seven days from
-     * @returns {string} The date in MM/DD/YYYY format with 7 days taken off
-     */
-    subtractSeven(date) {
-      date.setDate(date.getDate() - 7);
-      return date.toLocaleDateString()
-    },
-    /**
      * function that is called when a Graph option checkbox is ticked
      */
-    checkboxChange() {
+    updateGraph() {
+      //First decide our timeframe
+      //Then we check what data to include
+      //Then fetch and display Data
       //determine which checboxes are ticked
-      this.chartData.datasets = [];
-      if (this.selectedCheck.includes('temp')) {
-        this.chartData.datasets.push(this.currentTempDataset);
-
-      fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-        .then(response => response.json()).then(result => this.temperatureFilter(result))
-        .catch(error => console.log('error', error));
+      this.chartData.labels = [];
+      //if we want to sort by the day
+      if (this.selected == 1) {
+        this.chartData.labels = ["12:00AM", "", "", "3:00AM", "", "", "6:00AM", "", "", "9:00AM", "", "", "12:00PM", "", "", "3:00PM", "", "", "6:00PM", "", "", "9:00PM", "", ""];
+        fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+          .then(response => response.json()).then(value => this.sortByHour(value)).catch(error => console.log('error', error));
       }
-      if (this.selectedCheck.includes('egg')) {
-        this.chartData.datasets.push(this.currentEggDataset);
+      //If we want to sort by the week
+      else if (this.selected == 2) {
+        for (var i = 6; i >= 0; i--) {
+          var Vardate = new Date();
+          Vardate.setDate(Vardate.getDate() - i)
+          this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
+        }
+        //Grab data in between the week
+        fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+          .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
       }
-      if (this.selectedCheck.includes('light')) {
-        this.chartData.datasets.push(this.currentLightDataset);
-      }
-    },
-    temperatureFilter(json){
-      //this.chartData.labels = [];
-      this.chartData.datasets[0].data = [];
-      for(var i = 0; i < json.length; i++){
-        console.log(json[i])
-        //this.chartData.labels += json[i]['date']
-        console.log(json[i]['temperature'])
-        this.chartData.datasets[0].data.push(json[i]['temperature'])
+      //Else if we want to sort by the month
+      else if (this.selected == 3) {3
+        //Populate graph with monthly data points
+        //let date = new Date()
+        //Get what month it is and populate the chart with days 28-31
+        fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+          .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
       }
     },
     /**
-     * function that is called when a graph option datebox is selected
+     * Sorts data by hour and then populates the dashboard graph
+     * @param {JSON} json is the daily data we need to parse
      */
-    dateChange() {
-      //Determine what data we want
-      //API Call to grab shit between the two dates
-      //Need to calculate correct range of data to put stuff in
-      //set the datasets equal to it
-    }
+    sortByHour(json) {
+      var weeklist;
+      var weekval;
+      var keyTemp;
+      var key;
+      this.chartData.datasets[0].data = [];
+      this.chartData.datasets[1].data = [];
+      this.chartData.datasets[2].data = [];
+      if (this.selectedCheck.includes('temp')) {
+        weeklist = {}
+        weekval = {}
+        for (var i = 0; i < json.length; i++) {
+          keyTemp = json[i]['date'].toString();
+          //var dateT
+          key = keyTemp.substring(0, 10); //CHANGE HERE TO PARSE TO HOUR INSTEAD OF Date
+          if (key in weeklist) {
+            weeklist[key] += 1;
+            weekval[key] += json[i]['temperature'];
+          }
+          else {
+            weeklist[key] = 1;
+            weekval[key] = json[i]['temperature'];
+          }
+        }
+      }
+    },
+    /**
+     * Function that takes in json data and populates the graph accordingly
+     * @param {JSON} json is our coop data for the week or month
+     */
+    sortByDays(json) {
+      //Next check what data we want to Display
+      var weeklist;
+      var weekval;
+      var keyTemp;
+      var key;
+      this.chartData.datasets[0].data = [];
+      this.chartData.datasets[1].data = [];
+      this.chartData.datasets[2].data = [];
+      if (this.selectedCheck.includes('temp')) {
+        weeklist = {}
+        weekval = {}
+        for (var i = 0; i < json.length; i++) {
+          //If there is a date in the dictionary
+          keyTemp = json[i]['date'].toString();
+          key = keyTemp.substring(0, 10);
+          if (key in weeklist) {
+            weeklist[key] += 1;
+            weekval[key] += json[i]['temperature'];
+          }
+          else {
+            weeklist[key] = 1;
+            weekval[key] = json[i]['temperature'];
+          }
+          //this.chartData.labels += json[i]['date']
+          // console.log(json[i]['temperature'])
+          // this.chartData.datasets[0].data.push(json[i]['temperature'])
+        }
+        for (const key in weeklist) {
+          //console.log("On Day " + key + "The average temperature was " + weekval[key] / weeklist[key])
+          this.chartData.datasets[0].data.push(weekval[key] / weeklist[key])
+        }
+      }
+      //If the egg slot is selected
+      if (this.selectedCheck.includes('egg')) {
+        weeklist = {}
+        for (var k = 0; k < json.length; k++) {
+          //If there is a date in the dictionary
+          keyTemp = json[k]['date'].toString();
+          //console.log(json[k])
+          //console.log(json[j]['date'].toString())
+          key = keyTemp.substring(0, 10);
+          if (key in weeklist && json[k]['hasEgg']) {
+            weeklist[key] += 1;
+          }
+          else if (json[k]['hasEgg']) {
+            weeklist[key] = 1;
+          }
+        }
+        for (const key in weeklist) {
+          //console.log("On Day " + key + "The average temperature was " + weekval[key] / weeklist[key])
+          this.chartData.datasets[1].data.push(weeklist[key])
+        }
+      }
+      if (this.selectedCheck.includes('humidity')) {
+        weeklist = {}
+        weekval = {}
+        for (var j = 0; j < json.length; j++) {
+          //If there is a date in the dictionary
+          keyTemp = json[j]['date'].toString();
+          //console.log(json[j]['date'].toString())
+          key = keyTemp.substring(0, 10);
+          if (key in weeklist) {
+            weeklist[key] += 1;
+            weekval[key] += json[j]['humidity'];
+          }
+          else {
+            weeklist[key] = 1;
+            weekval[key] = json[j]['humidity'];
+          }
+          //this.chartData.labels += json[i]['date']
+          // console.log(json[i]['temperature'])
+          // this.chartData.datasets[0].data.push(json[i]['temperature'])
+        }
+        for (const key in weeklist) {
+          //console.log("On Day " + key + "The average temperature was " + weekval[key] / weeklist[key])
+          this.chartData.datasets[2].data.push(weekval[key] / weeklist[key])
+        }
+      }
+    },
+    /**
+   * Test function that might reduce parsing time of the json file
+   * test when internet is back
+   * @param {JSON} json is our coop data for the week or month
+   */
+    TESTsortByDays(json) {
+      //Next check what data we want to Display
+      var weeklist = {};
+      var weekval = {};
+      var keyTemp;
+      var key;
+      this.chartData.datasets[0].data = [];
+      this.chartData.datasets[1].data = [];
+      this.chartData.datasets[2].data = [];
+      for (var i = 0; i < json.length; i++) {
+        //If there is a date in the dictionary
+        keyTemp = json[i]['date'].toString();
+        key = keyTemp.substring(0, 10);
+        if (key in weeklist) {
+          weeklist[key] += 1;
+          weekval[key]['temp'] += json[i]['temperature'];
+          weekval[key]['humidity'] += json[i]['humidity'];
+          if (json[i]['hasEgg']) {
+            weekval[key]['egg'] += 1;
+          }
+        }
+        else {
+          weeklist[key] = 1;
+          weekval[key] = json[i]['temperature'];
+          weekval[key]['humidity'] = json[i]['humidity'];
+          if (weekval[i]['hasEgg']) {
+            weekval[key]['egg'] = 1;
+          }
+        }
+      }
+      for (const key in weeklist) {
+        if (this.selectedCheck.includes('temp')) {
+          this.chartData.datasets[0].data.push(weekval[key]['temp'] / weeklist[key]['temp'])
+        }
+        if (this.selectedCheck.includes('egg')) {
+          this.chartData.datasets[1].data.push(weeklist[key]['egg'])
+        }
+        this.chartData.datasets[2].data.push(weekval[key]['humidity'] / weeklist[key]['humidity'])
+      }
+    },
+    /**
+     * Rounds the time to the nearest hour given a date input
+     * @param {DateTime} date is the date we want to round to
+     */
+    roundToHour(date) {
+      var p = 60 * 60 * 1000; // milliseconds in an hour
+      return new Date(Math.round(date.getTime() / p) * p);
+    },
+    /**
+     * Converts temperature units
+     * @param {float} temp is the temperature value we want to convert
+     */
+    unitsConvert(temp) {
+      let newVal = 0;
+      //If current units is celcius, convert to F 
+      if (this.isCelc) {
+        this.isCelc = false;
+        newVal = (temp * (9 / 5)) + 32;
+      }
+      //If current units is F, convert to celcius
+      else {
+        this.isCelc = true;
+        newVal = (temp - 32) / (9 / 5)
+      }
+      return newVal;
+    },
+
   },
 }
 </script>
@@ -206,22 +379,32 @@ export default {
     <b-modal id="notificationModal" title="Notifications">
       even more stuff
     </b-modal>
-    <b-modal id="settingsModal" title="Settings">
-      <p class="my-4">Hello from modal!</p>
+    <b-modal id="settingsModal" hide-footer title="Settings">
+      <div>
+        <b style="text-align: center;">Light</b>
+        <b-button variant="danger" size="lg"
+          style="margin-left: 5vw; min-width: 10vw; margin-right: 2.5vw;">Off</b-button>
+        <b-button variant="success" size="lg" style="min-width: 10vw;">On</b-button>
+      </div>
+      <div style="padding-top: 2.5vh;">
+        <b>Set temperature threshold:</b>
+      </div>
+
     </b-modal>
     <b-sidebar id="graphSettingsSidebar" title="Graph Settings" shadow>
       <div class="px-3 py-2">
         <div style="align-items: center; text-align: center;">
           Date Range:
-          <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="this.subtractSeven(new Date())"
-            :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="startDate" size="sm"
-            style="font-size: 1.5vw;"></b-form-datepicker>
-          To
-          <b-form-datepicker @input="dateChange" id="enter-datepicker" :placeholder="new Date().toLocaleDateString()"
-            :date-format-options="{ year: 'numeric', month: 'numeric', day: 'numeric' }" v-model="endDate" size="sm"
-            style="font-size: 1.5vw; margin-bottom: 5vh;"></b-form-datepicker>
+          <b-form-group>
+            <b-form-radio v-on:change="updateGraph" v-model="selected" name="some-radios" value="1">
+              Day</b-form-radio>
+            <b-form-radio v-on:change="updateGraph" v-model="selected" name="some-radios" value="2">
+              Week</b-form-radio>
+            <b-form-radio v-on:change="updateGraph" v-model="selected" name="some-radios" value="3">
+              Month</b-form-radio>
+          </b-form-group>
           Display Information:
-          <b-form-checkbox-group @input="checkboxChange" style="text-align: left ;" size="lg" id="graphOptions"
+          <b-form-checkbox-group @input="updateGraph" style="text-align: left ;" size="lg" id="graphOptions"
             v-model="selectedCheck" :options="options" stacked switches></b-form-checkbox-group>
         </div>
       </div>
