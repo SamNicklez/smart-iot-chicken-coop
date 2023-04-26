@@ -29,8 +29,12 @@ export default {
    */
   data() {
     return {
+      isInit: false,
+      isSignIn: false,
+      button1Dis: true,
+      button2Dis: false,
+      coopCode: 123456,
       currentTemp: 0, //Current temperature of the given coop
-      boxes: 2, //Number of boxes in coop
       isCelc: true, //gives us current units C or F
       currentTempDataset: { //The current dataset needed for graph
         label: 'Temperature',
@@ -53,7 +57,8 @@ export default {
       },
       text: null,
       isAdmin: false, //If user is an admin, if true, can access settings menu
-      sliderValue: 65,
+      tempSliderValue: 65,
+      lightSliderValue: 0,
       getRequestOptions: {
         method: 'GET',
         redirect: 'follow'
@@ -109,11 +114,15 @@ export default {
    * Runs of the load of the webpage
    */
   mounted() {
-
-    //this.$refs['startupModal'].show()
-
-    //(1°C × 9/5) + 32
-
+    this.$bvModal.show('startupModal')
+  },
+  created(){
+    let that = this;
+    let checkGauthLoad = setInterval(function () {
+      that.isInit = that.$gAuth.isInit;
+      that.isSignIn = that.$gAuth.isAuthorized;
+      if (that.isInit) clearInterval(checkGauthLoad);
+    }, 1000);
   },
   /**
    * All methods needed to run web app
@@ -154,8 +163,8 @@ export default {
       //if we want to sort by the day
       if (this.selected == 1) {
         this.chartData.labels = ["12:00AM", "", "", "3:00AM", "", "", "6:00AM", "", "", "9:00AM", "", "", "12:00PM", "", "", "3:00PM", "", "", "6:00PM", "", "", "9:00PM", "", ""];
-        fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-          .then(response => response.json()).then(value => this.sortByHour(value)).catch(error => console.log('error', error));
+        // fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+        //   .then(response => response.json()).then(value => this.sortByHour(value)).catch(error => console.log('error', error));
       }
       //If we want to sort by the week
       else if (this.selected == 2) {
@@ -165,16 +174,17 @@ export default {
           this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
         }
         //Grab data in between the week
-        fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-          .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
+        // fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+        //   .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
       }
       //Else if we want to sort by the month
-      else if (this.selected == 3) {3
+      else if (this.selected == 3) {
+        3
         //Populate graph with monthly data points
         //let date = new Date()
         //Get what month it is and populate the chart with days 28-31
-        fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-          .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
+        // fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
+        //   .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
       }
     },
     /**
@@ -362,9 +372,101 @@ export default {
       }
       return newVal;
     },
-    setTempThresh(){
-      console.log("HITY")
-    }
+    /**
+     * Sends the inputted temperature to the server
+     */
+    setTempThresh() {
+      if (this.lightSliderValue == 0) {
+        this.button1Dis = true;
+        this.button2Dis = false;
+      }
+      else {
+        this.button1Dis = false;
+        this.button2Dis = true;
+      }
+    },
+    lightSet() {
+      // var myHeaders = new Headers();
+      // myHeaders.append("Content-Type", "application/json");
+
+      // var requestOptions = {
+      //   method: 'GET',
+      //   headers: myHeaders,
+      //   redirect: 'follow'
+      // };
+
+      // fetch("https://coop-project-server.glitch.me/current", requestOptions)
+      //   .then(response => response.text())
+      //   .then(result => console.log(result))
+      //   .catch(error => console.log('error', error));
+      //if the lights are off
+      if (this.button1Dis) {
+        this.button1Dis = false;
+        this.button2Dis = true;
+        this.lightSliderValue = 100;
+      }
+      else {
+        this.button1Dis = true;
+        this.button2Dis = false;
+        this.lightSliderValue = 0;
+      }
+    },
+    async handleClickUpdateScope() {
+      const option = new window.gapi.auth2.SigninOptionsBuilder();
+      option.setScope("email https://www.googleapis.com/auth/drive.file");
+      const googleUser = this.$gAuth.GoogleAuth.currentUser.get();
+      try {
+        await googleUser.grant(option);
+        console.log("success");
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    handleClickLogin() {
+      this.$gAuth
+        .getAuthCode()
+        .then((authCode) => {
+          //on success
+          console.log("authCode", authCode);
+        })
+        .catch((error) => {
+          //on fail do something
+          console.log(error)
+        });
+    },
+    async handleClickSignIn() {
+      try {
+        const googleUser = await this.$gAuth.signIn();
+        if (!googleUser) {
+          return null;
+        }
+        console.log("googleUser", googleUser);
+        console.log("getId", googleUser.getId());
+        console.log("getBasicProfile", googleUser.getBasicProfile());
+        console.log("getAuthResponse", googleUser.getAuthResponse());
+        console.log(
+          "getAuthResponse",
+          this.$gAuth.GoogleAuth.currentUser.get().getAuthResponse()
+        );
+        this.isSignIn = this.$gAuth.isAuthorized;
+      } catch (error) {
+        //on fail do something
+        console.error(error);
+        return null;
+      }
+    },
+    async handleClickSignOut() {
+      try {
+        await this.$gAuth.signOut();
+        this.isSignIn = this.$gAuth.isAuthorized;
+        console.log("isSignIn", this.$gAuth.isAuthorized);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    handleClickDisconnect() {
+      window.location.href = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${window.location.href}`;
+    },
 
   },
 }
@@ -375,6 +477,24 @@ export default {
     <b-modal ref="startupModal" id="startupModal" title="Login" :hide-footer="true" size="lg">
       <b-form-input v-model="text" placeholder="Chicken ID" style="margin-top: 1vw; margin-bottom: 1vw;"></b-form-input>
       <b-form-input v-model="text" placeholder="Username" style="margin-bottom: 1vw"></b-form-input>
+      <div class="hello">
+        <div>
+          <b-button type="primary" icon="fas fa-edit" @click="handleClickLogin" :disabled="!isInit">get
+            authCode</b-button>
+          <b-button type="primary" icon="fas fa-edit" @click="handleClickSignIn" v-if="!isSignIn"
+            :disabled="!isInit">sign in</b-button>
+          <b-button type="primary" icon="fas fa-edit" @click="handleClickSignOut" v-if="isSignIn"
+            :disabled="!isInit">sign out</b-button>
+          <b-button type="primary" icon="fas fa-edit" @click="handleClickDisconnect"
+            :disabled="!isInit">disconnect</b-button>
+          <i class="fas fa-edit"></i>
+          <p>isInit: {{ isInit }}</p>
+          <p>isSignIn: {{ isSignIn }}</p>
+
+          <b-button type="primary" icon="fas fa-edit" @click="handleClickUpdateScope" :disabled="!isInit">update
+            scope</b-button>
+          </div>
+      </div>
       <b-button>Set up</b-button>
     </b-modal>
     <b-modal id="accountModal" title="Account Information">
@@ -386,14 +506,22 @@ export default {
     <b-modal id="settingsModal" hide-footer title="Settings">
       <div>
         <b style="text-align: center;">Light</b>
-        <b-button variant="danger" size="md"
+        <b-button v-on:click="lightSet" :disabled="button1Dis" variant="danger" size="md"
           style="margin-left: 5vw; min-width: 10vw; margin-right: 2.5vw;">Off</b-button>
-        <b-button variant="success" size="md" style="min-width: 10vw;">On</b-button>
+        <b-button v-on:click="lightSet" :disabled="button2Dis" variant="success" size="md"
+          style="min-width: 10vw;">On</b-button>
       </div>
       <div style="padding-top: 5vh;">
         <b>Set temperature threshold:</b>
-        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="sliderValue" type="range" min="0" max="100" value="65" class="slider" />
-        {{ this.sliderValue }}&#x2109;
+        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="tempSliderValue" type="range" min="0"
+          max="100" value="65" class="slider" />
+        {{ this.tempSliderValue }}&#x2109;
+      </div>
+      <div style="padding-top: 5vh;">
+        <b>Light Brightness:</b>
+        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="lightSliderValue" type="range" min="0"
+          max="100" value="65" class="slider" />
+        {{ this.lightSliderValue }}%
       </div>
 
     </b-modal>
@@ -443,8 +571,11 @@ export default {
             <LineChartGenerator :chart-options="chartOptions" :chart-data="chartData" />
           </div>
           <b-card class="coopCard" header="Coop View">
-            Stuff
+            <b-card title="Box 1" tag="article" style="max-width: 20rem; margin-left: 3.5vw;" class="mb-2"></b-card>
+            <b-card title="Box 2" tag="article" style="margin-top: 5vh; max-width: 20rem; margin-left: 3.5vw;"
+              class="mb-2"></b-card>
           </b-card>
+
         </b-card>
       </b-card>
     </div>
