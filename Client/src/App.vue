@@ -35,7 +35,7 @@ export default {
       button2Dis: false,
       email: "",
       name: "",
-      coopCode: 123456,
+      coopCode: null,
       isCelc: false, //gives us current units C or F
       currentTempDataset: { //The current dataset needed for graph
         label: 'Temperature',
@@ -61,22 +61,10 @@ export default {
       currentLight: "N/A", //If the current level of light is adequate
       currentTemp: 0, //Current temperature of the given coop
       currentHum: 0,
-      box1HasChicken: false, 
+      box1HasChicken: false,
       box2HasChicken: false,
       box1Eggs: 0,
       box2Eggs: 0,
-      currentLightDataset: { //The current dataset needed for graph
-        label: 'Humidity',
-        data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
-        borderColor: '#2f4b7c',
-        backgroundColor: '#f95d6a',
-      },
-      currentEggDataset: { //The current dataset needed for graph
-        label: 'Eggs',
-        data: [1, 3, 5, 2, 7, 1, 5],
-        borderColor: '#a05195',
-        backgroundColor: '#d45087',
-      },
       text: null,
       isAdmin: false, //If user is an admin, if true, can access settings menu
       tempSliderUpperValue: 65,
@@ -129,44 +117,7 @@ export default {
    * Runs of the load of the webpage
    */
   mounted() {
-    var Vardate = new Date();
-    var hour = Vardate.getHours();
-    for (var z = 23; z >= 0; z--) {
-      if (z % 2 == 0) {
-        this.chartData.labels.push("");
-      }
-      else {
-        if (hour == 0) {
-          hour = 24;
-        }
-        if (hour > 12) {
-          var editHour = hour - 12;
-          this.chartData.labels.push(editHour + ":00PM");
-        }
-        else {
-          this.chartData.labels.push(hour + ":00AM");
-        }
-        hour--;
-      }
-    }
-    this.chartData.labels.reverse();
     this.$bvModal.show('startupModal')
-    this.getSettings();
-    this.getCurrent();
-    //Populate with 24 hour data from server if not in test mode
-    if (!this.test) {
-      var myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json");
-      var requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        redirect: 'follow'
-      };
-      fetch("https://coop-project-server.glitch.me/graph?interval=Day", requestOptions)
-        .then(response => response.json())
-        .then(result => this.sortDay(result))
-        .catch(error => console.log('error', error));
-    }
   },
   created() {
     let that = this;
@@ -196,12 +147,12 @@ export default {
      * Checks if the light in the chicken coop is adequate or not
      * @returns {String} "Adequate" or "Too Low" depending on the number given
      */
-    checkLight() {
-      if (this.currLight >= 1) {
-        return "Adequate";
+    checkLight(light) {
+      if (light == 1) {
+        return "Good";
       }
       else {
-        return "Too Low";
+        return "Low";
       }
     },
     /**
@@ -217,6 +168,7 @@ export default {
       this.chartData.datasets[0].data = [];
       this.chartData.datasets[1].data = [];
       this.chartData.datasets[2].data = [];
+      console.log("TEST", this.test)
       //if we want to sort by the day
       if (this.test) {
         if (this.selected == 1) {
@@ -293,24 +245,17 @@ export default {
       }
       //If not in test mode, pull from the server
       else {
+        console.log("HIT")
         if (this.selected == 1) {
-          this.getDay
+          this.getDay();
         }
         //If we want to sort by the week
         else if (this.selected == 2) {
-          for (var k = 6; k >= 0; k--) {
-            Vardate = new Date();
-            Vardate.setDate(Vardate.getDate() - k)
-            this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
-          }
+          this.getWeek()
         }
         //Else if we want to sort by the month
         else if (this.selected == 3) {
-          for (var l = 29; l >= 0; l--) {
-            Vardate = new Date();
-            Vardate.setDate(Vardate.getDate() - l)
-            this.chartData.labels.push([Vardate.toLocaleDateString("en-US")]);
-          }
+          this.getMonth()
         }
       }
     },
@@ -361,7 +306,27 @@ export default {
      * @param {json} json is all of our daily data to populate the server
      */
     sortDay(json) {
-      this.chartData.labels = ["12:00AM", "", "2:00AM", "", "4:00AM", "", "6:00AM", "", "8:00AM", "", "10:00AM", "", "12:00PM", "", "2:00PM", "", "4:00PM", "", "6:00PM", "", "8:00PM", "", "10:00PM", ""];
+      var Vardate = new Date();
+      var hour = Vardate.getHours();
+      for (var z = 23; z >= 0; z--) {
+        if (z % 2 == 0) {
+          this.chartData.labels.push("");
+        }
+        else {
+          if (hour == 0) {
+            hour = 24;
+          }
+          if (hour > 12) {
+            var editHour = hour - 12;
+            this.chartData.labels.push(editHour + ":00PM");
+          }
+          else {
+            this.chartData.labels.push(hour + ":00AM");
+          }
+          hour--;
+        }
+      }
+      this.chartData.labels.reverse();
       var max = -100;
       var tempArray = [];
       var humArray = [];
@@ -386,9 +351,61 @@ export default {
     },
     sortMonth(json) {
       console.log(json);
+      for (var l = 29; l >= 0; l--) {
+        var Vardate = new Date();
+        Vardate.setDate(Vardate.getDate() - l)
+        this.chartData.labels.push([Vardate.toLocaleDateString("en-US")]);
+      }
+      var max = -100;
+      var tempArray = [];
+      var humArray = [];
+      var eggArray = [];
+      for (const key of Object.entries(json["temperature"])) {
+        console.log(key[0])
+        if (key[0] > max) {
+          max = key[0];
+        }
+      }
+      console.log(max)
+      for (var x = 0; x < 30; x++) {
+        console.log(json['temperature'][max])
+        tempArray.push(json['temperature'][max]);
+        humArray.push(json['humidity'][max]);
+        eggArray.push(json['box1_eggs'][max] + json['box2_eggs'][max]);
+        max--;
+      }
+      this.chartData.datasets[0].data = tempArray;
+      this.chartData.datasets[1].data = eggArray;
+      this.chartData.datasets[2].data = humArray;
     },
     sortWeek(json) {
       console.log(json);
+      for (var i = 6; i >= 0; i--) {
+        var Vardate = new Date();
+        Vardate.setDate(Vardate.getDate() - i)
+        this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
+      }
+      var max = -100;
+      var tempArray = [];
+      var humArray = [];
+      var eggArray = [];
+      for (const key of Object.entries(json["temperature"])) {
+        console.log(key[0])
+        if (key[0] > max) {
+          max = key[0];
+        }
+      }
+      console.log(max)
+      for (var x = 0; x < 7; x++) {
+        console.log(json['temperature'][max])
+        tempArray.push(json['temperature'][max]);
+        humArray.push(json['humidity'][max]);
+        eggArray.push(json['box1_eggs'][max] + json['box2_eggs'][max]);
+        max--;
+      }
+      this.chartData.datasets[0].data = tempArray;
+      this.chartData.datasets[1].data = eggArray;
+      this.chartData.datasets[2].data = humArray;
     },
     async handleClickUpdateScope() {
       const option = new window.gapi.auth2.SigninOptionsBuilder();
@@ -414,51 +431,88 @@ export default {
         });
     },
     async handleClickSignIn() {
-      try {
-        const googleUser = await this.$gAuth.signIn();
-        if (!googleUser) {
+      if (this.coopCode == 123456) {
+        try {
+          const googleUser = await this.$gAuth.signIn();
+          if (!googleUser) {
+            return null;
+          }
+          // console.log("Email", googleUser.getBasicProfile()['iw']);
+          // console.log("Name", googleUser.getBasicProfile()['ZZ']);
+          this.email = googleUser.getBasicProfile()['iw']
+          this.name = googleUser.getBasicProfile()['ZZ']
+          this.isSignIn = this.$gAuth.isAuthorized;
+          var myHeaders = new Headers();
+          myHeaders.append("Content-Type", "application/json");
+
+          var raw = JSON.stringify({
+            "coop_code": 123456,
+            "email": googleUser.getBasicProfile()['iw'],
+            "name": googleUser.getBasicProfile()['ZZ']
+          });
+          var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow'
+          };
+
+          fetch("https://coop-project-server.glitch.me/login", requestOptions)
+            .then(response => this.handleRESPONSE(response.status))
+            .catch(error => console.log('error', error));
+          this.$bvModal.hide('startupModal')
+        } catch (error) {
+          //on fail do something
+          console.error(error);
           return null;
         }
-        console.log("googleUser", googleUser);
-        console.log("getId", googleUser.getId());
-        console.log("getBasicProfile", googleUser.getBasicProfile());
-        console.log("getAuthResponse", googleUser.getAuthResponse());
-        console.log(
-          "getAuthResponse",
-          this.$gAuth.GoogleAuth.currentUser.get().getAuthResponse()
-        );
-        // console.log("Email", googleUser.getBasicProfile()['iw']);
-        // console.log("Name", googleUser.getBasicProfile()['ZZ']);
-        this.email = googleUser.getBasicProfile()['iw']
-        this.name = googleUser.getBasicProfile()['ZZ']
-        this.isSignIn = this.$gAuth.isAuthorized;
-        var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        var raw = JSON.stringify({
-          "coop_code": 123456,
-          "email": googleUser.getBasicProfile()['iw'],
-          "name": googleUser.getBasicProfile()['ZZ']
-        });
-        var requestOptions = {
-          method: 'POST',
-          headers: myHeaders,
-          body: raw,
-          redirect: 'follow'
-        };
-
-        fetch("https://coop-project-server.glitch.me/login", requestOptions)
-          .then(response => this.handleRESPONSE(response.status))
-          .catch(error => console.log('error', error));
-        this.$bvModal.hide('startupModal')
-      } catch (error) {
-        //on fail do something
-        console.error(error);
-        return null;
+      }
+      else {
+        window.alert("Incorrect Coop Code");
       }
     },
     handleRESPONSE(response) {
-      console.log(response)
+      if (response == 200) {
+        this.getSettings();
+        setInterval(this.getCurrent(), 10000)
+        //Populate with 24 hour data from server if not in test mode
+        if (!this.test) {
+          var myHeaders = new Headers();
+          myHeaders.append("Content-Type", "application/json");
+          var requestOptions = {
+            method: 'GET',
+            headers: myHeaders,
+            redirect: 'follow'
+          };
+          fetch("https://coop-project-server.glitch.me/graph?interval=Day", requestOptions)
+            .then(response => response.json())
+            .then(result => this.sortDay(result))
+            .catch(error => console.log('error', error));
+        }
+        else {
+          var Vardate = new Date();
+          var hour = Vardate.getHours();
+          for (var z = 23; z >= 0; z--) {
+            if (z % 2 == 0) {
+              this.chartData.labels.push("");
+            }
+            else {
+              if (hour == 0) {
+                hour = 24;
+              }
+              if (hour > 12) {
+                var editHour = hour - 12;
+                this.chartData.labels.push(editHour + ":00PM");
+              }
+              else {
+                this.chartData.labels.push(hour + ":00AM");
+              }
+              hour--;
+            }
+          }
+          this.chartData.labels.reverse();
+        }
+      }
     },
     async handleClickSignOut() {
       try {
@@ -516,16 +570,14 @@ export default {
         headers: myHeaders,
         redirect: 'follow'
       };
-
       fetch("https://coop-project-server.glitch.me/graph?interval=Day", requestOptions)
-        .then(response => response.text())
-        .then(result => console.log(result))
+        .then(response => response.json())
+        .then(result => this.sortDay(result))
         .catch(error => console.log('error', error));
     },
     getMonth() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
-
       var requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -533,8 +585,8 @@ export default {
       };
 
       fetch("https://coop-project-server.glitch.me/graph?interval=Month", requestOptions)
-        .then(response => response.text())
-        .then(result => console.log(result))
+        .then(response => response.json())
+        .then(result => this.sortMonth(result))
         .catch(error => console.log('error', error));
     },
     getWeek() {
@@ -548,8 +600,8 @@ export default {
       };
 
       fetch("https://coop-project-server.glitch.me/graph?interval=Week", requestOptions)
-        .then(response => response.text())
-        .then(result => console.log(result))
+        .then(response => response.json())
+        .then(result => this.sortWeek(result))
         .catch(error => console.log('error', error));
     },
     getCurrent() {
@@ -567,8 +619,8 @@ export default {
         .then(result => this.setCurrent(result))
         .catch(error => console.log('error', error));
     },
-    setCurrent(json){
-      console.log(json['temp'])
+    setCurrent(json) {
+      console.log(json['light'])
       this.currentTemp = Math.round(this.CtoF(json['temp']))
       this.currentHum = Math.round(this.CtoF(json['humidity']))
       this.currentLight = this.checkLight(json['light'])
@@ -577,14 +629,14 @@ export default {
       this.box1HasChicken = this.checkChicken(json['hasChicken1'])
       this.box2HasChicken = this.checkChicken(json['hasChicken2'])
     },
-    checkChicken(value){
-      if(value == 0){
-        return "No active chicken"
+    checkChicken(value) {
+      if (value == 0) {
+        return "No active chicken in box"
       }
-      else{
+      else {
         return "Chicken in box"
       }
-    }
+    },
   },
 }
 </script>
@@ -593,7 +645,8 @@ export default {
   <div v-if="!isMobile()" class="TextChange">
     <b-modal ref="startupModal" id="startupModal" title="Login" :hide-footer="true" size="md" no-close-on-esc
       no-close-on-backdrop>
-      <b-form-input v-model="text" placeholder="Chicken ID" style="margin-top: 1vw; margin-bottom: 1vw;"></b-form-input>
+      <b-form-input v-model="coopCode" placeholder="Chicken ID"
+        style="margin-top: 1vw; margin-bottom: 1vw; -webkit-text-security: square;" maxlength="6"></b-form-input>
       <div class="OAuth" style="margin: 0 auto;">
         <div>
           <b-button type="primary" icon="fas fa-edit" @click="handleClickSignIn" :disabled="!isInit">Sign
@@ -685,9 +738,27 @@ export default {
             <LineChartGenerator :chart-options="chartOptions" :chart-data="chartData" />
           </div>
           <b-card class="coopCard" header="Coop View">
-            <b-card title="Box 1" tag="article" style="max-width: 20rem; margin-left: 3.5vw;" class="mb-2"></b-card>
+            <b-card title="Box 1" tag="article" style="max-width: 20rem; margin-left: 3.5vw;" class="mb-2">
+              <table>
+                <tr>
+                  <b>Eggs in box: </b> {{ this.box1Eggs }}
+                </tr>
+                <tr>
+                  <b>{{ this.box1HasChicken }}</b>
+                </tr>
+              </table>
+            </b-card>
             <b-card title="Box 2" tag="article" style="margin-top: 5vh; max-width: 20rem; margin-left: 3.5vw;"
-              class="mb-2"></b-card>
+              class="mb-2">
+              <table>
+                <tr>
+                  <b>Eggs in box: </b> {{ this.box2Eggs }}
+                </tr>
+                <tr>
+                  <b>{{ this.box2HasChicken }}</b>
+                </tr>
+              </table>
+            </b-card>
           </b-card>
 
         </b-card>
