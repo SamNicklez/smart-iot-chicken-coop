@@ -60,20 +60,17 @@ export default {
       //End dummy data
       currentLight: "N/A", //If the current level of light is adequate
       currentTemp: 0, //Current temperature of the given coop
-      currentHum: 0,
-      box1HasChicken: false,
-      box2HasChicken: false,
-      box1Eggs: 0,
-      box2Eggs: 0,
-      text: null,
+      currentHum: 0, //Current humidity
+      box1HasChicken: false, //If box 1 currently has a chicken in it
+      box2HasChicken: false, //If box 2 currently has a chicken in it
+      box1Eggs: 0, // how many eggs box 1 has
+      box2Eggs: 0, // how many eggs box 2 has
+      text: null, //Current text of the checkboxes
       isAdmin: false, //If user is an admin, if true, can access settings menu
-      tempSliderUpperValue: 65,
-      tempSliderLowerValue: 30,
-      lightSliderValue: 0,
-      getRequestOptions: {
-        method: 'GET',
-        redirect: 'follow'
-      },
+      tempSliderUpperValue: 65, //Upper temp value set by user
+      tempSliderLowerValue: 30, //Lower temp value set by user
+      autoLight: false,
+      lightSliderValue: 0, //Light % value set by user
       selectedCheck: ['temp', 'egg', 'humidity'], // Must be an array reference!
       selected: 1,
       DOW: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -168,7 +165,6 @@ export default {
       this.chartData.datasets[0].data = [];
       this.chartData.datasets[1].data = [];
       this.chartData.datasets[2].data = [];
-      console.log("TEST", this.test)
       //if we want to sort by the day
       if (this.test) {
         if (this.selected == 1) {
@@ -189,8 +185,8 @@ export default {
               else {
                 this.chartData.labels.push(hour + ":00AM");
               }
-              hour--;
             }
+            hour--;
           }
           this.chartData.labels.reverse();
           if (this.selectedCheck.includes('temp')) {
@@ -245,7 +241,6 @@ export default {
       }
       //If not in test mode, pull from the server
       else {
-        console.log("HIT")
         if (this.selected == 1) {
           this.getDay();
         }
@@ -260,7 +255,7 @@ export default {
       }
     },
     /**
-     * Converts temperature units
+     * Converts F to C
      * @param {float} temp is the temperature value we want to convert
      */
     FtoC(temp) {
@@ -268,6 +263,10 @@ export default {
       newVal = (temp - 32) / (9 / 5)
       return newVal;
     },
+    /**
+     * Converts C to F
+     * @param {float} temp is the temperature in C we want to convert
+     */
     CtoF(temp) {
       let newVal = 0;
       newVal = (temp * (9 / 5)) + 32;
@@ -287,6 +286,9 @@ export default {
       }
       this.postSettings();
     },
+    /**
+     * Function that is called when the light button or light slider is used
+     */
     lightSet() {
       //if the lights are off
       if (this.button1Dis) {
@@ -306,51 +308,37 @@ export default {
      * @param {json} json is all of our daily data to populate the server
      */
     sortDay(json) {
-      var Vardate = new Date();
-      var hour = Vardate.getHours();
-      for (var z = 23; z >= 0; z--) {
-        if (z % 2 == 0) {
-          this.chartData.labels.push("");
-        }
-        else {
-          if (hour == 0) {
-            hour = 24;
-          }
-          if (hour > 12) {
-            var editHour = hour - 12;
-            this.chartData.labels.push(editHour + ":00PM");
-          }
-          else {
-            this.chartData.labels.push(hour + ":00AM");
-          }
-          hour--;
-        }
-      }
       this.chartData.labels.reverse();
       var max = -100;
       var tempArray = [];
       var humArray = [];
       var eggArray = [];
       for (const key of Object.entries(json["temperature"])) {
-        console.log(key[0])
         if (key[0] > max) {
           max = key[0];
         }
       }
-      console.log(max)
       for (var x = 0; x < 24; x++) {
-        console.log(json['temperature'][max])
-        tempArray.push(json['temperature'][max]);
+        tempArray.push(this.CtoF(json['temperature'][max]));
         humArray.push(json['humidity'][max]);
         eggArray.push(json['box1_eggs'][max] + json['box2_eggs'][max]);
         max--;
       }
-      this.chartData.datasets[0].data = tempArray;
-      this.chartData.datasets[1].data = eggArray;
-      this.chartData.datasets[2].data = humArray;
+      if (this.selectedCheck.includes('temp')) {
+        this.chartData.datasets[0].data = tempArray;
+      }
+      if (this.selectedCheck.includes('egg')) {
+        this.chartData.datasets[1].data = eggArray;
+      }
+      if (this.selectedCheck.includes('humidity')) {
+        this.chartData.datasets[2].data = humArray;
+      }
     },
+    /**
+     * Sorts monthly server side data and displays it on the graph
+     * @param {json} json contains the month data
+     */
     sortMonth(json) {
-      console.log(json);
       for (var l = 29; l >= 0; l--) {
         var Vardate = new Date();
         Vardate.setDate(Vardate.getDate() - l)
@@ -361,25 +349,31 @@ export default {
       var humArray = [];
       var eggArray = [];
       for (const key of Object.entries(json["temperature"])) {
-        console.log(key[0])
         if (key[0] > max) {
           max = key[0];
         }
       }
-      console.log(max)
       for (var x = 0; x < 30; x++) {
-        console.log(json['temperature'][max])
-        tempArray.push(json['temperature'][max]);
+        tempArray.push(this.CtoF(json['temperature'][max]));
         humArray.push(json['humidity'][max]);
         eggArray.push(json['box1_eggs'][max] + json['box2_eggs'][max]);
         max--;
       }
-      this.chartData.datasets[0].data = tempArray;
-      this.chartData.datasets[1].data = eggArray;
-      this.chartData.datasets[2].data = humArray;
+      if (this.selectedCheck.includes('temp')) {
+        this.chartData.datasets[0].data = tempArray;
+      }
+      if (this.selectedCheck.includes('egg')) {
+        this.chartData.datasets[1].data = eggArray;
+      }
+      if (this.selectedCheck.includes('humidity')) {
+        this.chartData.datasets[2].data = humArray;
+      }
     },
+    /**
+     * Sorts weekly server side data and displays it on the graph
+     * @param {json} json contains the week data
+     */
     sortWeek(json) {
-      console.log(json);
       for (var i = 6; i >= 0; i--) {
         var Vardate = new Date();
         Vardate.setDate(Vardate.getDate() - i)
@@ -390,46 +384,57 @@ export default {
       var humArray = [];
       var eggArray = [];
       for (const key of Object.entries(json["temperature"])) {
-        console.log(key[0])
         if (key[0] > max) {
           max = key[0];
         }
       }
-      console.log(max)
       for (var x = 0; x < 7; x++) {
-        console.log(json['temperature'][max])
-        tempArray.push(json['temperature'][max]);
+        tempArray.push(this.CtoF(json['temperature'][max]));
         humArray.push(json['humidity'][max]);
         eggArray.push(json['box1_eggs'][max] + json['box2_eggs'][max]);
         max--;
       }
-      this.chartData.datasets[0].data = tempArray;
-      this.chartData.datasets[1].data = eggArray;
-      this.chartData.datasets[2].data = humArray;
+      if (this.selectedCheck.includes('temp')) {
+        this.chartData.datasets[0].data = tempArray;
+      }
+      if (this.selectedCheck.includes('egg')) {
+        this.chartData.datasets[1].data = eggArray;
+      }
+      if (this.selectedCheck.includes('humidity')) {
+        this.chartData.datasets[2].data = humArray;
+      }
     },
+    /**
+     * Function that isn't currently used but would be used to update the token for further use
+     */
     async handleClickUpdateScope() {
       const option = new window.gapi.auth2.SigninOptionsBuilder();
       option.setScope("email https://www.googleapis.com/auth/drive.file");
       const googleUser = this.$gAuth.GoogleAuth.currentUser.get();
       try {
         await googleUser.grant(option);
-        console.log("success");
       } catch (error) {
         console.error(error);
       }
     },
+    /**
+     * Handles the button press of the login process for google oauth
+     */
     handleClickLogin() {
       this.$gAuth
         .getAuthCode()
         .then((authCode) => {
           //on success
-          console.log("authCode", authCode);
+          return authCode;
         })
         .catch((error) => {
           //on fail do something
           console.log(error)
         });
     },
+    /**
+     * Handles the click sign-in process for google OAuth
+     */
     async handleClickSignIn() {
       if (this.coopCode == 123456) {
         try {
@@ -471,10 +476,15 @@ export default {
         window.alert("Incorrect Coop Code");
       }
     },
+    /**
+     * Function that sends the auth token to the server and checks if they are valid
+     * If they are, grab data and set it to the graph
+     * @param {HTTP Response} response contains if the user is valid or not
+     */
     handleRESPONSE(response) {
       if (response == 200) {
         this.getSettings();
-        setInterval(this.getCurrent(), 10000)
+        setInterval(this.getCurrent, 10000)
         //Populate with 24 hour data from server if not in test mode
         if (!this.test) {
           var myHeaders = new Headers();
@@ -514,18 +524,26 @@ export default {
         }
       }
     },
+    /**
+     * Handles the button click of signing out of a google auth account
+     */
     async handleClickSignOut() {
       try {
         await this.$gAuth.signOut();
         this.isSignIn = this.$gAuth.isAuthorized;
-        console.log("isSignIn", this.$gAuth.isAuthorized);
       } catch (error) {
         console.error(error);
       }
     },
+    /**
+     * Handles the disconnect of a google oauth account
+     */
     handleClickDisconnect() {
       window.location.href = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${window.location.href}`;
     },
+    /**
+     * Grabs the current settings from the server
+     */
     getSettings() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
@@ -538,19 +556,29 @@ export default {
         .then(response => response.json()).then(response => this.setSettings(response))
         .catch(error => console.log('error', error));
     },
+    /**
+     * Helper function that sets local variables equal to the server settings
+     * @param {json} json contains the current settings for the light and temperature
+     */
     setSettings(json) {
+      console.log(json)
       this.lightSliderValue = Math.round(json['brightness'])
       this.tempSliderUpperValue = Math.round(this.CtoF(json['tempMax']));
       this.tempSliderLowerValue = Math.round(this.CtoF(json['tempMin']));
+      this.autoLight = json['autoLight']
     },
+    /**
+     * Sends the current user settings to the server
+     */
     postSettings() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
-
+      console.log(this.autoLight)
       var raw = JSON.stringify({
         "brightness": this.lightSliderValue,
         "tempMax": this.FtoC(this.tempSliderUpperValue),
-        "tempMin": this.FtoC(this.tempSliderLowerValue)
+        "tempMin": this.FtoC(this.tempSliderLowerValue),
+        "autoLight": this.autoLight
       });
       var requestOptions = {
         method: 'POST',
@@ -561,6 +589,9 @@ export default {
       fetch("https://coop-project-server.glitch.me/settings", requestOptions)
         .catch(error => console.log('error', error));
     },
+    /**
+     * Grabs the current days data and displays it on the graph
+     */
     getDay() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
@@ -575,6 +606,9 @@ export default {
         .then(result => this.sortDay(result))
         .catch(error => console.log('error', error));
     },
+    /**
+     * Grabs the current months data and displays it on the graph
+     */
     getMonth() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
@@ -589,6 +623,9 @@ export default {
         .then(result => this.sortMonth(result))
         .catch(error => console.log('error', error));
     },
+    /**
+     * Grabs the current weeks data and displays it on the graph
+     */
     getWeek() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
@@ -604,6 +641,9 @@ export default {
         .then(result => this.sortWeek(result))
         .catch(error => console.log('error', error));
     },
+    /**
+     * Function that grabs the current chicken data (temp, humidity, etc) and displays it
+     */
     getCurrent() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
@@ -619,16 +659,25 @@ export default {
         .then(result => this.setCurrent(result))
         .catch(error => console.log('error', error));
     },
+    /**
+     * helper function that sets all the pulled current values and puts them on the screen
+     * @param {json} json is our current chicken data
+     */
     setCurrent(json) {
-      console.log(json['light'])
+      //console.log(json)
       this.currentTemp = Math.round(this.CtoF(json['temp']))
-      this.currentHum = Math.round(this.CtoF(json['humidity']))
+      this.currentHum = Math.round(json['humidity'])
       this.currentLight = this.checkLight(json['light'])
       this.box1Eggs = json['numberOfEggs1']
       this.box2Eggs = json['numberOfEggs2']
       this.box1HasChicken = this.checkChicken(json['hasChicken1'])
       this.box2HasChicken = this.checkChicken(json['hasChicken2'])
     },
+    /**
+     * Function that takes in a number and returns a string which corresponds to the correct
+     * action
+     * @param {0 | 1} value 
+     */
     checkChicken(value) {
       if (value == 0) {
         return "No active chicken in box"
@@ -644,7 +693,7 @@ export default {
 <template>
   <div v-if="!isMobile()" class="TextChange">
     <b-modal ref="startupModal" id="startupModal" title="Login" :hide-footer="true" size="md" no-close-on-esc
-      no-close-on-backdrop>
+      no-close-on-backdrop hide-header-close>
       <b-form-input v-model="coopCode" placeholder="Chicken ID"
         style="margin-top: 1vw; margin-bottom: 1vw; -webkit-text-security: square;" maxlength="6"></b-form-input>
       <div class="OAuth" style="margin: 0 auto;">
@@ -689,8 +738,11 @@ export default {
         <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="lightSliderValue" type="range" min="0"
           max="100" value="65" class="slider" />
         {{ this.lightSliderValue }}%
-        <b-form-checkbox id="checkbox-1" v-model="test" name="checkbox-1" value="true" unchecked-value="false">
+        <b-form-checkbox id="checkbox-1" v-model="test" name="checkbox-1" :value="true" :unchecked-value="false">
           Use Testing Data
+        </b-form-checkbox>
+        <b-form-checkbox v-on:change="postSettings" id="checkbox-2" v-model="autoLight" name="checkbox-2" :value="1" :unchecked-value="0">
+          Auto light
         </b-form-checkbox>
       </div>
     </b-modal>
