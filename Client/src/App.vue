@@ -22,7 +22,7 @@ ChartJS.register(
 
 export default {
   components: {
-    LineChartGenerator
+    LineChartGenerator,
   },
   /**
    * Data that is used in the program
@@ -33,16 +33,38 @@ export default {
       isSignIn: false,
       button1Dis: true,
       button2Dis: false,
+      email: "",
+      name: "",
       coopCode: 123456,
-      currentTemp: 0, //Current temperature of the given coop
-      isCelc: true, //gives us current units C or F
+      isCelc: false, //gives us current units C or F
       currentTempDataset: { //The current dataset needed for graph
         label: 'Temperature',
         data: [70, 68, 65, 75, 78, 76, 77],
         borderColor: '#ffa600',
         backgroundColor: '#003f5c',
       },
-      currLight: true, //If the current level of light is adequate
+      /**
+       * Dummy data for testing purposes while team builds out server components
+       * Note: add toggle in user interface to change data from fake to real
+       */
+      test: true,
+      weeklyTempData: [51.7, 41.5, 35.1, 38.1, 43.5, 46.6, 35.6],
+      weeklyHumidityData: [83.7, 70.7, 76.7, 58.1, 55.3, 59.4, 75.6],
+      weeklyEggData: [12, 4, 8, 2, 8, 10, 1],
+      dailyTempData: [44, 42, 40, 38, 38, 37, 38, 41, 45, 48, 50, 52, 54, 55, 55, 56, 56, 55, 52, 49, 46, 43, 42, 39],
+      dailyHumidityData: [63, 70, 77, 83, 83, 86, 83, 79, 71, 66, 61, 54, 47, 42, 40, 37, 37, 37, 40, 44, 50, 56, 55, 65],
+      dailyEggData: [0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+      monthlyEggData: [3, 5, 8, 6, 9, 10, 8, 6, 8, 2, 3, 12, 6, 12, 3, 12, 8, 11, 2, 3, 10, 11, 5, 12, 4, 8, 2, 8, 10, 1],
+      monthlyTempData: [37.4, 36.7, 33.7, 48.0, 57.4, 37.1, 48.0, 48.8, 52.0, 44.8, 36.7, 46.6, 53.2, 56.5, 57.8, 63.5, 69.33, 66.3, 68.0, 53.8, 35.4, 41.4, 46.2, 54.2, 51.7, 41.5, 35.1, 38.1, 43.5, 46.6, 35.6],
+      monthlyHumidityData: [56.7, 47.9, 53.4, 76.0, 71.1, 56.6, 52.7, 87.1, 79.6, 52.5, 44.8, 36.3, 34.3, 46.4, 50.0, 43.8, 44.0, 39.1, 74.0, 78.8, 66.8, 55.5, 60.2, 83.7, 70.7, 76.7, 58.1, 55.3, 59.4, 75.6],
+      //End dummy data
+      currentLight: "N/A", //If the current level of light is adequate
+      currentTemp: 0, //Current temperature of the given coop
+      currentHum: 0,
+      box1HasChicken: false, 
+      box2HasChicken: false,
+      box1Eggs: 0,
+      box2Eggs: 0,
       currentLightDataset: { //The current dataset needed for graph
         label: 'Humidity',
         data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
@@ -57,7 +79,8 @@ export default {
       },
       text: null,
       isAdmin: false, //If user is an admin, if true, can access settings menu
-      tempSliderValue: 65,
+      tempSliderUpperValue: 65,
+      tempSliderLowerValue: 30,
       lightSliderValue: 0,
       getRequestOptions: {
         method: 'GET',
@@ -72,31 +95,23 @@ export default {
         { text: '  Humidity', value: 'humidity' },
       ],
       chartData: {
-        labels: [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July'
-        ],
+        labels: [],
         datasets: [
           {
             label: 'Temperature',
-            data: [70, 68, 65, 75, 78, 76, 77],
+            data: [44, 42, 40, 38, 38, 37, 38, 41, 45, 48, 50, 52, 54, 55, 55, 56, 56, 55, 52, 49, 46, 43, 42, 39],
             borderColor: '#ffa600',
             backgroundColor: '#003f5c',
           },
           {
             label: 'Eggs',
-            data: [1, 3, 5, 2, 7, 1, 5],
+            data: [0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
             borderColor: '#a05195',
             backgroundColor: '#d45087',
           },
           {
             label: 'Humidity',
-            data: [6.66, 4.36, 10.23, 18.23, 20.55, 26.6, 23],
+            data: [63, 70, 77, 83, 83, 86, 83, 79, 71, 66, 61, 54, 47, 42, 40, 37, 37, 37, 40, 44, 50, 56, 55, 65],
             borderColor: '#2f4b7c',
             backgroundColor: '#f95d6a',
           },
@@ -114,15 +129,53 @@ export default {
    * Runs of the load of the webpage
    */
   mounted() {
+    var Vardate = new Date();
+    var hour = Vardate.getHours();
+    for (var z = 23; z >= 0; z--) {
+      if (z % 2 == 0) {
+        this.chartData.labels.push("");
+      }
+      else {
+        if (hour == 0) {
+          hour = 24;
+        }
+        if (hour > 12) {
+          var editHour = hour - 12;
+          this.chartData.labels.push(editHour + ":00PM");
+        }
+        else {
+          this.chartData.labels.push(hour + ":00AM");
+        }
+        hour--;
+      }
+    }
+    this.chartData.labels.reverse();
     this.$bvModal.show('startupModal')
+    this.getSettings();
+    this.getCurrent();
+    //Populate with 24 hour data from server if not in test mode
+    if (!this.test) {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+      var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+      };
+      fetch("https://coop-project-server.glitch.me/graph?interval=Day", requestOptions)
+        .then(response => response.json())
+        .then(result => this.sortDay(result))
+        .catch(error => console.log('error', error));
+    }
   },
-  created(){
+  created() {
     let that = this;
     let checkGauthLoad = setInterval(function () {
       that.isInit = that.$gAuth.isInit;
       that.isSignIn = that.$gAuth.isAuthorized;
       if (that.isInit) clearInterval(checkGauthLoad);
     }, 1000);
+
   },
   /**
    * All methods needed to run web app
@@ -155,221 +208,124 @@ export default {
      * function that is called when a Graph option checkbox is ticked
      */
     updateGraph() {
+      var Vardate;
       //First decide our timeframe
       //Then we check what data to include
       //Then fetch and display Data
       //determine which checboxes are ticked
       this.chartData.labels = [];
+      this.chartData.datasets[0].data = [];
+      this.chartData.datasets[1].data = [];
+      this.chartData.datasets[2].data = [];
       //if we want to sort by the day
-      if (this.selected == 1) {
-        this.chartData.labels = ["12:00AM", "", "", "3:00AM", "", "", "6:00AM", "", "", "9:00AM", "", "", "12:00PM", "", "", "3:00PM", "", "", "6:00PM", "", "", "9:00PM", "", ""];
-        // fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-        //   .then(response => response.json()).then(value => this.sortByHour(value)).catch(error => console.log('error', error));
-      }
-      //If we want to sort by the week
-      else if (this.selected == 2) {
-        for (var i = 6; i >= 0; i--) {
-          var Vardate = new Date();
-          Vardate.setDate(Vardate.getDate() - i)
-          this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
-        }
-        //Grab data in between the week
-        // fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-        //   .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
-      }
-      //Else if we want to sort by the month
-      else if (this.selected == 3) {
-        3
-        //Populate graph with monthly data points
-        //let date = new Date()
-        //Get what month it is and populate the chart with days 28-31
-        // fetch("https://coop-final-project.glitch.me/api/box/1", this.getRequestOptions)
-        //   .then(response => response.json()).then(value => this.sortByDays(value)).catch(error => console.log('error', error));
-      }
-    },
-    /**
-     * Sorts data by hour and then populates the dashboard graph
-     * @param {JSON} json is the daily data we need to parse
-     */
-    sortByHour(json) {
-      var weeklist;
-      var weekval;
-      var keyTemp;
-      var key;
-      this.chartData.datasets[0].data = [];
-      this.chartData.datasets[1].data = [];
-      this.chartData.datasets[2].data = [];
-      if (this.selectedCheck.includes('temp')) {
-        weeklist = {}
-        weekval = {}
-        for (var i = 0; i < json.length; i++) {
-          keyTemp = json[i]['date'].toString();
-          //var dateT
-          key = keyTemp.substring(0, 10); //CHANGE HERE TO PARSE TO HOUR INSTEAD OF Date
-          if (key in weeklist) {
-            weeklist[key] += 1;
-            weekval[key] += json[i]['temperature'];
+      if (this.test) {
+        if (this.selected == 1) {
+          Vardate = new Date();
+          var hour = Vardate.getHours();
+          for (var z = 23; z >= 0; z--) {
+            if (z % 2 == 0) {
+              this.chartData.labels.push("");
+            }
+            else {
+              if (hour == 0) {
+                hour = 24;
+              }
+              if (hour > 12) {
+                var editHour = hour - 12;
+                this.chartData.labels.push(editHour + ":00PM");
+              }
+              else {
+                this.chartData.labels.push(hour + ":00AM");
+              }
+              hour--;
+            }
           }
-          else {
-            weeklist[key] = 1;
-            weekval[key] = json[i]['temperature'];
+          this.chartData.labels.reverse();
+          if (this.selectedCheck.includes('temp')) {
+            this.chartData.datasets[0].data = this.dailyTempData;
+          }
+          if (this.selectedCheck.includes('egg')) {
+            this.chartData.datasets[1].data = this.dailyEggData;
+          }
+          if (this.selectedCheck.includes('humidity')) {
+            this.chartData.datasets[2].data = this.dailyHumidityData;
           }
         }
-      }
-    },
-    /**
-     * Function that takes in json data and populates the graph accordingly
-     * @param {JSON} json is our coop data for the week or month
-     */
-    sortByDays(json) {
-      //Next check what data we want to Display
-      var weeklist;
-      var weekval;
-      var keyTemp;
-      var key;
-      this.chartData.datasets[0].data = [];
-      this.chartData.datasets[1].data = [];
-      this.chartData.datasets[2].data = [];
-      if (this.selectedCheck.includes('temp')) {
-        weeklist = {}
-        weekval = {}
-        for (var i = 0; i < json.length; i++) {
-          //If there is a date in the dictionary
-          keyTemp = json[i]['date'].toString();
-          key = keyTemp.substring(0, 10);
-          if (key in weeklist) {
-            weeklist[key] += 1;
-            weekval[key] += json[i]['temperature'];
+        //If we want to sort by the week
+        else if (this.selected == 2) {
+          for (var i = 6; i >= 0; i--) {
+            Vardate = new Date();
+            Vardate.setDate(Vardate.getDate() - i)
+            this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
           }
-          else {
-            weeklist[key] = 1;
-            weekval[key] = json[i]['temperature'];
+          if (this.selectedCheck.includes('temp')) {
+            this.chartData.datasets[0].data = this.weeklyTempData;
           }
-          //this.chartData.labels += json[i]['date']
-          // console.log(json[i]['temperature'])
-          // this.chartData.datasets[0].data.push(json[i]['temperature'])
-        }
-        for (const key in weeklist) {
-          //console.log("On Day " + key + "The average temperature was " + weekval[key] / weeklist[key])
-          this.chartData.datasets[0].data.push(weekval[key] / weeklist[key])
-        }
-      }
-      //If the egg slot is selected
-      if (this.selectedCheck.includes('egg')) {
-        weeklist = {}
-        for (var k = 0; k < json.length; k++) {
-          //If there is a date in the dictionary
-          keyTemp = json[k]['date'].toString();
-          //console.log(json[k])
-          //console.log(json[j]['date'].toString())
-          key = keyTemp.substring(0, 10);
-          if (key in weeklist && json[k]['hasEgg']) {
-            weeklist[key] += 1;
+          if (this.selectedCheck.includes('egg')) {
+            this.chartData.datasets[1].data = this.weeklyEggData;
           }
-          else if (json[k]['hasEgg']) {
-            weeklist[key] = 1;
+          if (this.selectedCheck.includes('humidity')) {
+            this.chartData.datasets[2].data = this.weeklyHumidityData;
           }
         }
-        for (const key in weeklist) {
-          //console.log("On Day " + key + "The average temperature was " + weekval[key] / weeklist[key])
-          this.chartData.datasets[1].data.push(weeklist[key])
-        }
-      }
-      if (this.selectedCheck.includes('humidity')) {
-        weeklist = {}
-        weekval = {}
-        for (var j = 0; j < json.length; j++) {
-          //If there is a date in the dictionary
-          keyTemp = json[j]['date'].toString();
-          //console.log(json[j]['date'].toString())
-          key = keyTemp.substring(0, 10);
-          if (key in weeklist) {
-            weeklist[key] += 1;
-            weekval[key] += json[j]['humidity'];
+        //Else if we want to sort by the month
+        else if (this.selected == 3) {
+          for (var j = 29; j >= 0; j--) {
+            Vardate = new Date();
+            Vardate.setDate(Vardate.getDate() - j)
+            if (j % 2 == 0) {
+              this.chartData.labels.push("")
+            }
+            else {
+              this.chartData.labels.push([Vardate.toLocaleDateString("en-US")]);
+            }
           }
-          else {
-            weeklist[key] = 1;
-            weekval[key] = json[j]['humidity'];
+          if (this.selectedCheck.includes('temp')) {
+            this.chartData.datasets[0].data = this.monthlyTempData;
           }
-          //this.chartData.labels += json[i]['date']
-          // console.log(json[i]['temperature'])
-          // this.chartData.datasets[0].data.push(json[i]['temperature'])
-        }
-        for (const key in weeklist) {
-          //console.log("On Day " + key + "The average temperature was " + weekval[key] / weeklist[key])
-          this.chartData.datasets[2].data.push(weekval[key] / weeklist[key])
-        }
-      }
-    },
-    /**
-   * Test function that might reduce parsing time of the json file
-   * test when internet is back
-   * @param {JSON} json is our coop data for the week or month
-   */
-    TESTsortByDays(json) {
-      //Next check what data we want to Display
-      var weeklist = {};
-      var weekval = {};
-      var keyTemp;
-      var key;
-      this.chartData.datasets[0].data = [];
-      this.chartData.datasets[1].data = [];
-      this.chartData.datasets[2].data = [];
-      for (var i = 0; i < json.length; i++) {
-        //If there is a date in the dictionary
-        keyTemp = json[i]['date'].toString();
-        key = keyTemp.substring(0, 10);
-        if (key in weeklist) {
-          weeklist[key] += 1;
-          weekval[key]['temp'] += json[i]['temperature'];
-          weekval[key]['humidity'] += json[i]['humidity'];
-          if (json[i]['hasEgg']) {
-            weekval[key]['egg'] += 1;
+          if (this.selectedCheck.includes('egg')) {
+            this.chartData.datasets[1].data = this.monthlyEggData;
           }
-        }
-        else {
-          weeklist[key] = 1;
-          weekval[key] = json[i]['temperature'];
-          weekval[key]['humidity'] = json[i]['humidity'];
-          if (weekval[i]['hasEgg']) {
-            weekval[key]['egg'] = 1;
+          if (this.selectedCheck.includes('humidity')) {
+            this.chartData.datasets[2].data = this.monthlyHumidityData;
           }
         }
       }
-      for (const key in weeklist) {
-        if (this.selectedCheck.includes('temp')) {
-          this.chartData.datasets[0].data.push(weekval[key]['temp'] / weeklist[key]['temp'])
+      //If not in test mode, pull from the server
+      else {
+        if (this.selected == 1) {
+          this.getDay
         }
-        if (this.selectedCheck.includes('egg')) {
-          this.chartData.datasets[1].data.push(weeklist[key]['egg'])
+        //If we want to sort by the week
+        else if (this.selected == 2) {
+          for (var k = 6; k >= 0; k--) {
+            Vardate = new Date();
+            Vardate.setDate(Vardate.getDate() - k)
+            this.chartData.labels.push([Vardate.toLocaleDateString("en-US", { weekday: 'long' })]);
+          }
         }
-        this.chartData.datasets[2].data.push(weekval[key]['humidity'] / weeklist[key]['humidity'])
+        //Else if we want to sort by the month
+        else if (this.selected == 3) {
+          for (var l = 29; l >= 0; l--) {
+            Vardate = new Date();
+            Vardate.setDate(Vardate.getDate() - l)
+            this.chartData.labels.push([Vardate.toLocaleDateString("en-US")]);
+          }
+        }
       }
-    },
-    /**
-     * Rounds the time to the nearest hour given a date input
-     * @param {DateTime} date is the date we want to round to
-     */
-    roundToHour(date) {
-      var p = 60 * 60 * 1000; // milliseconds in an hour
-      return new Date(Math.round(date.getTime() / p) * p);
     },
     /**
      * Converts temperature units
      * @param {float} temp is the temperature value we want to convert
      */
-    unitsConvert(temp) {
+    FtoC(temp) {
       let newVal = 0;
-      //If current units is celcius, convert to F 
-      if (this.isCelc) {
-        this.isCelc = false;
-        newVal = (temp * (9 / 5)) + 32;
-      }
-      //If current units is F, convert to celcius
-      else {
-        this.isCelc = true;
-        newVal = (temp - 32) / (9 / 5)
-      }
+      newVal = (temp - 32) / (9 / 5)
+      return newVal;
+    },
+    CtoF(temp) {
+      let newVal = 0;
+      newVal = (temp * (9 / 5)) + 32;
       return newVal;
     },
     /**
@@ -384,21 +340,9 @@ export default {
         this.button1Dis = false;
         this.button2Dis = true;
       }
+      this.postSettings();
     },
     lightSet() {
-      // var myHeaders = new Headers();
-      // myHeaders.append("Content-Type", "application/json");
-
-      // var requestOptions = {
-      //   method: 'GET',
-      //   headers: myHeaders,
-      //   redirect: 'follow'
-      // };
-
-      // fetch("https://coop-project-server.glitch.me/current", requestOptions)
-      //   .then(response => response.text())
-      //   .then(result => console.log(result))
-      //   .catch(error => console.log('error', error));
       //if the lights are off
       if (this.button1Dis) {
         this.button1Dis = false;
@@ -410,6 +354,41 @@ export default {
         this.button2Dis = false;
         this.lightSliderValue = 0;
       }
+      this.postSettings();
+    },
+    /**
+     * Function that populates the table with daily data from the server
+     * @param {json} json is all of our daily data to populate the server
+     */
+    sortDay(json) {
+      this.chartData.labels = ["12:00AM", "", "2:00AM", "", "4:00AM", "", "6:00AM", "", "8:00AM", "", "10:00AM", "", "12:00PM", "", "2:00PM", "", "4:00PM", "", "6:00PM", "", "8:00PM", "", "10:00PM", ""];
+      var max = -100;
+      var tempArray = [];
+      var humArray = [];
+      var eggArray = [];
+      for (const key of Object.entries(json["temperature"])) {
+        console.log(key[0])
+        if (key[0] > max) {
+          max = key[0];
+        }
+      }
+      console.log(max)
+      for (var x = 0; x < 24; x++) {
+        console.log(json['temperature'][max])
+        tempArray.push(json['temperature'][max]);
+        humArray.push(json['humidity'][max]);
+        eggArray.push(json['box1_eggs'][max] + json['box2_eggs'][max]);
+        max--;
+      }
+      this.chartData.datasets[0].data = tempArray;
+      this.chartData.datasets[1].data = eggArray;
+      this.chartData.datasets[2].data = humArray;
+    },
+    sortMonth(json) {
+      console.log(json);
+    },
+    sortWeek(json) {
+      console.log(json);
     },
     async handleClickUpdateScope() {
       const option = new window.gapi.auth2.SigninOptionsBuilder();
@@ -448,12 +427,38 @@ export default {
           "getAuthResponse",
           this.$gAuth.GoogleAuth.currentUser.get().getAuthResponse()
         );
+        // console.log("Email", googleUser.getBasicProfile()['iw']);
+        // console.log("Name", googleUser.getBasicProfile()['ZZ']);
+        this.email = googleUser.getBasicProfile()['iw']
+        this.name = googleUser.getBasicProfile()['ZZ']
         this.isSignIn = this.$gAuth.isAuthorized;
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        var raw = JSON.stringify({
+          "coop_code": 123456,
+          "email": googleUser.getBasicProfile()['iw'],
+          "name": googleUser.getBasicProfile()['ZZ']
+        });
+        var requestOptions = {
+          method: 'POST',
+          headers: myHeaders,
+          body: raw,
+          redirect: 'follow'
+        };
+
+        fetch("https://coop-project-server.glitch.me/login", requestOptions)
+          .then(response => this.handleRESPONSE(response.status))
+          .catch(error => console.log('error', error));
+        this.$bvModal.hide('startupModal')
       } catch (error) {
         //on fail do something
         console.error(error);
         return null;
       }
+    },
+    handleRESPONSE(response) {
+      console.log(response)
     },
     async handleClickSignOut() {
       try {
@@ -467,41 +472,146 @@ export default {
     handleClickDisconnect() {
       window.location.href = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${window.location.href}`;
     },
+    getSettings() {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+      var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+      };
+      fetch("https://coop-project-server.glitch.me/settings", requestOptions)
+        .then(response => response.json()).then(response => this.setSettings(response))
+        .catch(error => console.log('error', error));
+    },
+    setSettings(json) {
+      this.lightSliderValue = Math.round(json['brightness'])
+      this.tempSliderUpperValue = Math.round(this.CtoF(json['tempMax']));
+      this.tempSliderLowerValue = Math.round(this.CtoF(json['tempMin']));
+    },
+    postSettings() {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
 
+      var raw = JSON.stringify({
+        "brightness": this.lightSliderValue,
+        "tempMax": this.FtoC(this.tempSliderUpperValue),
+        "tempMin": this.FtoC(this.tempSliderLowerValue)
+      });
+      var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
+      };
+      fetch("https://coop-project-server.glitch.me/settings", requestOptions)
+        .catch(error => console.log('error', error));
+    },
+    getDay() {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+      };
+
+      fetch("https://coop-project-server.glitch.me/graph?interval=Day", requestOptions)
+        .then(response => response.text())
+        .then(result => console.log(result))
+        .catch(error => console.log('error', error));
+    },
+    getMonth() {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+      };
+
+      fetch("https://coop-project-server.glitch.me/graph?interval=Month", requestOptions)
+        .then(response => response.text())
+        .then(result => console.log(result))
+        .catch(error => console.log('error', error));
+    },
+    getWeek() {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+      };
+
+      fetch("https://coop-project-server.glitch.me/graph?interval=Week", requestOptions)
+        .then(response => response.text())
+        .then(result => console.log(result))
+        .catch(error => console.log('error', error));
+    },
+    getCurrent() {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+      };
+
+      fetch("https://coop-project-server.glitch.me/current?coop_id=1", requestOptions)
+        .then(response => response.json())
+        .then(result => this.setCurrent(result))
+        .catch(error => console.log('error', error));
+    },
+    setCurrent(json){
+      console.log(json['temp'])
+      this.currentTemp = Math.round(this.CtoF(json['temp']))
+      this.currentHum = Math.round(this.CtoF(json['humidity']))
+      this.currentLight = this.checkLight(json['light'])
+      this.box1Eggs = json['numberOfEggs1']
+      this.box2Eggs = json['numberOfEggs2']
+      this.box1HasChicken = this.checkChicken(json['hasChicken1'])
+      this.box2HasChicken = this.checkChicken(json['hasChicken2'])
+    },
+    checkChicken(value){
+      if(value == 0){
+        return "No active chicken"
+      }
+      else{
+        return "Chicken in box"
+      }
+    }
   },
 }
 </script>
 
 <template>
   <div v-if="!isMobile()" class="TextChange">
-    <b-modal ref="startupModal" id="startupModal" title="Login" :hide-footer="true" size="lg">
+    <b-modal ref="startupModal" id="startupModal" title="Login" :hide-footer="true" size="md" no-close-on-esc
+      no-close-on-backdrop>
       <b-form-input v-model="text" placeholder="Chicken ID" style="margin-top: 1vw; margin-bottom: 1vw;"></b-form-input>
-      <b-form-input v-model="text" placeholder="Username" style="margin-bottom: 1vw"></b-form-input>
-      <div class="hello">
+      <div class="OAuth" style="margin: 0 auto;">
         <div>
-          <b-button type="primary" icon="fas fa-edit" @click="handleClickLogin" :disabled="!isInit">get
-            authCode</b-button>
-          <b-button type="primary" icon="fas fa-edit" @click="handleClickSignIn" v-if="!isSignIn"
-            :disabled="!isInit">sign in</b-button>
-          <b-button type="primary" icon="fas fa-edit" @click="handleClickSignOut" v-if="isSignIn"
-            :disabled="!isInit">sign out</b-button>
-          <b-button type="primary" icon="fas fa-edit" @click="handleClickDisconnect"
-            :disabled="!isInit">disconnect</b-button>
-          <i class="fas fa-edit"></i>
-          <p>isInit: {{ isInit }}</p>
-          <p>isSignIn: {{ isSignIn }}</p>
-
-          <b-button type="primary" icon="fas fa-edit" @click="handleClickUpdateScope" :disabled="!isInit">update
-            scope</b-button>
-          </div>
+          <b-button type="primary" icon="fas fa-edit" @click="handleClickSignIn" :disabled="!isInit">Sign
+            In</b-button>
+        </div>
       </div>
-      <b-button>Set up</b-button>
     </b-modal>
     <b-modal id="accountModal" title="Account Information">
-      more stuff
-    </b-modal>
-    <b-modal id="notificationModal" title="Notifications">
-      even more stuff
+      <table>
+        <tr>
+          <b>Email: </b> {{ this.email }}
+        </tr>
+        <tr>
+          <b>Name: </b> {{ this.name }}
+        </tr>
+      </table>
+      <b-button type="primary" style="margin-top: 2.5vh;" icon="fas fa-edit" @click="handleClickDisconnect"
+        :disabled="!isInit">Log Out</b-button>
     </b-modal>
     <b-modal id="settingsModal" hide-footer title="Settings">
       <div>
@@ -512,18 +622,24 @@ export default {
           style="min-width: 10vw;">On</b-button>
       </div>
       <div style="padding-top: 5vh;">
-        <b>Set temperature threshold:</b>
-        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="tempSliderValue" type="range" min="0"
+        <b>Set upper temperature threshold:</b>
+        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="tempSliderUpperValue" type="range" min="0"
           max="100" value="65" class="slider" />
-        {{ this.tempSliderValue }}&#x2109;
+        {{ this.tempSliderUpperValue }}&#x2109;
+        <b> Set lower temperature threshold: </b>
+        <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="tempSliderLowerValue" type="range" min="0"
+          max="100" value="65" class="slider" />
+        {{ this.tempSliderLowerValue }}&#x2109;
       </div>
       <div style="padding-top: 5vh;">
         <b>Light Brightness:</b>
         <input @mouseup="setTempThresh" style="margin-left: 2.5vw;" v-model="lightSliderValue" type="range" min="0"
           max="100" value="65" class="slider" />
         {{ this.lightSliderValue }}%
+        <b-form-checkbox id="checkbox-1" v-model="test" name="checkbox-1" value="true" unchecked-value="false">
+          Use Testing Data
+        </b-form-checkbox>
       </div>
-
     </b-modal>
     <b-sidebar id="graphSettingsSidebar" title="Graph Settings" shadow>
       <div class="px-3 py-2">
@@ -538,7 +654,7 @@ export default {
               Month</b-form-radio>
           </b-form-group>
           Display Information:
-          <b-form-checkbox-group change="updateGraph" style="text-align: left ;" size="lg" id="graphOptions"
+          <b-form-checkbox-group v-on:change="updateGraph" style="text-align: left ;" size="lg" id="graphOptions"
             v-model="selectedCheck" :options="options" stacked switches></b-form-checkbox-group>
         </div>
       </div>
@@ -547,21 +663,19 @@ export default {
       <b-card class="mainCard">
         <b-card class="topCard">
           <b-button-group style="float: right; position: relative;">
-            <b-list-group horizontal="md" style="margin-right: 6vw;">
-              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw;">Currernt Temperature: {{ this.currentTemp
+            <b-list-group horizontal="md" style="margin-right: 2vw;">
+              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw;">Current Temperature: {{ this.currentTemp
               }}&#x2109;</b-list-group-item>
-              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw">Currernt Light Level: {{ this.checkLight()
+              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw">Currernt Light Level: {{ this.currentLight
               }}</b-list-group-item>
+              <b-list-group-item style="font-size: 1.3vw; width: 22.5vw">Currernt Humidity: {{ this.currentHum
+              }}%</b-list-group-item>
             </b-list-group>
             <b-button v-b-modal.settingsModal variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
               <b-icon icon="tools"></b-icon> Settings
             </b-button>
             <b-button v-b-modal.accountModal variant="outline-primary" size="sm" style="width:10vw; font-size: 1.1vw">
               <b-icon icon="person-fill"></b-icon> Account
-            </b-button>
-            <b-button v-b-modal.notificationModal variant="outline-primary" size="sm"
-              style="width:10vw; font-size: 1.1vw">
-              <b-icon icon="inbox-fill"></b-icon> Notifications
             </b-button>
           </b-button-group>
         </b-card>

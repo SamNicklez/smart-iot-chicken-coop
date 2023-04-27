@@ -9,7 +9,6 @@ import GAuth from 'vue-google-oauth2'
 Vue.config.productionTip = false
 
 Vue.use(GAuth, { clientId: '473159579419-8posa7no3h97h05n70u69htvqhq7g79h.apps.googleusercontent.com', plugin_name: "Web client 3"})
-
 Vue.use(FormRadioPlugin)
 Vue.use(ModalPlugin)
 Vue.use(FormInputPlugin)
