@@ -29,23 +29,17 @@ export default {
    */
   data() {
     return {
-      isInit: false,
-      isSignIn: false,
-      button1Dis: true,
-      button2Dis: false,
-      email: "",
-      name: "",
-      coopCode: null,
+      isInit: false, //If the user is in the sign in screen
+      isSignIn: false, //If the user is signed in
+      button1Dis: true, //Tells us if the lights are on or off 
+      button2Dis: false, //Tells us if the lights are on or off
+      email: "", //email of the user logged in
+      name: "", //name of the user logged in
+      coopCode: null, //coop code we need to connect to the correct coop
       isCelc: false, //gives us current units C or F
-      currentTempDataset: { //The current dataset needed for graph
-        label: 'Temperature',
-        data: [70, 68, 65, 75, 78, 76, 77],
-        borderColor: '#ffa600',
-        backgroundColor: '#003f5c',
-      },
       /**
        * Dummy data for testing purposes while team builds out server components
-       * Note: add toggle in user interface to change data from fake to real
+       * There is a built in toggle in the settings menu to pull from the server
        */
       test: true,
       weeklyTempData: [51.7, 41.5, 35.1, 38.1, 43.5, 46.6, 35.6],
@@ -58,6 +52,7 @@ export default {
       monthlyTempData: [37.4, 36.7, 33.7, 48.0, 57.4, 37.1, 48.0, 48.8, 52.0, 44.8, 36.7, 46.6, 53.2, 56.5, 57.8, 63.5, 69.33, 66.3, 68.0, 53.8, 35.4, 41.4, 46.2, 54.2, 51.7, 41.5, 35.1, 38.1, 43.5, 46.6, 35.6],
       monthlyHumidityData: [56.7, 47.9, 53.4, 76.0, 71.1, 56.6, 52.7, 87.1, 79.6, 52.5, 44.8, 36.3, 34.3, 46.4, 50.0, 43.8, 44.0, 39.1, 74.0, 78.8, 66.8, 55.5, 60.2, 83.7, 70.7, 76.7, 58.1, 55.3, 59.4, 75.6],
       //End dummy data
+
       currentLight: "N/A", //If the current level of light is adequate
       currentTemp: 0, //Current temperature of the given coop
       currentHum: 0, //Current humidity
@@ -69,9 +64,9 @@ export default {
       isAdmin: false, //If user is an admin, if true, can access settings menu
       tempSliderUpperValue: 65, //Upper temp value set by user
       tempSliderLowerValue: 30, //Lower temp value set by user
-      autoLight: false,
+      autoLight: false, //if true, user does not control the light settings
       lightSliderValue: 0, //Light % value set by user
-      selectedCheck: ['temp', 'egg', 'humidity'], // Must be an array reference!
+      selectedCheck: ['temp', 'egg', 'humidity'], //tells us what to display on the graph
       selected: 1,
       DOW: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
       options: [
@@ -116,6 +111,9 @@ export default {
   mounted() {
     this.$bvModal.show('startupModal')
   },
+  /**
+   * Runs on the creation of the webpage
+   */
   created() {
     let that = this;
     let checkGauthLoad = setInterval(function () {
@@ -308,6 +306,7 @@ export default {
      * @param {json} json is all of our daily data to populate the server
      */
     sortDay(json) {
+      console.log(json)
       this.chartData.labels.reverse();
       var max = -100;
       var tempArray = [];
@@ -449,6 +448,8 @@ export default {
           this.isSignIn = this.$gAuth.isAuthorized;
           var myHeaders = new Headers();
           myHeaders.append("Content-Type", "application/json");
+          myHeaders.append("authorization", "123456");
+
 
           var raw = JSON.stringify({
             "coop_code": 123456,
@@ -489,6 +490,7 @@ export default {
         if (!this.test) {
           var myHeaders = new Headers();
           myHeaders.append("Content-Type", "application/json");
+          myHeaders.append("authorization", "123456");
           var requestOptions = {
             method: 'GET',
             headers: myHeaders,
@@ -547,6 +549,7 @@ export default {
     getSettings() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("authorization", "123456");
       var requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -561,7 +564,6 @@ export default {
      * @param {json} json contains the current settings for the light and temperature
      */
     setSettings(json) {
-      console.log(json)
       this.lightSliderValue = Math.round(json['brightness'])
       this.tempSliderUpperValue = Math.round(this.CtoF(json['tempMax']));
       this.tempSliderLowerValue = Math.round(this.CtoF(json['tempMin']));
@@ -573,7 +575,7 @@ export default {
     postSettings() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
-      console.log(this.autoLight)
+      myHeaders.append("authorization", "123456");
       var raw = JSON.stringify({
         "brightness": this.lightSliderValue,
         "tempMax": this.FtoC(this.tempSliderUpperValue),
@@ -595,6 +597,7 @@ export default {
     getDay() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("authorization", "123456");
 
       var requestOptions = {
         method: 'GET',
@@ -612,6 +615,7 @@ export default {
     getMonth() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("authorization", "123456");
       var requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -629,6 +633,7 @@ export default {
     getWeek() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("authorization", "123456");
 
       var requestOptions = {
         method: 'GET',
@@ -647,6 +652,7 @@ export default {
     getCurrent() {
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("authorization", "123456");
 
       var requestOptions = {
         method: 'GET',
