@@ -1080,7 +1080,7 @@ async function sendEmail() {
         secure: true,
         auth: {
           user: "SamuelNicklaus1@gmail.com",
-          pass: "sahnaovwhjrzztqx",
+          pass: "******************",
         },
       });
 
