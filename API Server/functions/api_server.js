@@ -1,34 +1,51 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const express = require("express");
-const bodyParser = require('body-parser')
-const jsonParser = bodyParser.json()
 const cors = require("cors");
 const app = express();
-app.use(cors({origin: '*'}));
 const socket = require("socket.io");
 
-const listener = app.listen(8080, "172.20.10.3", () => {
+const listener = app.listen(3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
+const creds = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-const serviceAccount = require("./permissions.json");
+app.use(express.json());
+app.use(cors());
+
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://iotfinalproject-db88d-default-rtdb.firebaseio.com"});
+  credential: admin.credential.cert(creds),
+  databaseURL: "https://iotfinalproject-db88d-default-rtdb.firebaseio.com",
+});
 const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true });
+
+function isAuth(req, res, next) {
+  const auth = req.headers.authorization;
+  if (auth === "123456") {
+    next();
+  } else {
+    res.status(401);
+    res.send("Access forbidden");
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// CAMERA
+// USER TABLE
 
-// POST new camera
-app.post("/api/camera", jsonParser, (req, res) => {
+// POST new user
+app.post("/api/users", isAuth, (req, res) => {
   (async () => {
     try {
-      await db.collection("camera").doc("/" + req.body.id + "/").create({
-        box: req.body.box,
-        coop: req.body.coop,
-      });
+      await db
+        .collection("users")
+        .doc("/1/")
+        .collection("/users/")
+        .doc(req.body.email)
+        .create({
+          name: req.body.name,
+          email: req.body.email,
+        });
       return res.status(200).send();
     } catch (error) {
       return res.status(500).send(error);
@@ -36,35 +53,43 @@ app.post("/api/camera", jsonParser, (req, res) => {
   })();
 });
 
-// PATCH camera's coop and box
-app.patch("/api/camera", jsonParser, (req, res) => {
+// GET coop_code
+app.get("/api/users/:coop_id", isAuth, (req, res) => {
   (async () => {
     try {
-      const document = db.collection("camera").doc(req.body.id);
-      await document.update({
-        box: req.body.box,
-        coop: req.body.coop,
+      const query = await db
+        .collection("users")
+        .doc("/" + req.params.coop_id + "/");
+      const response = await query.get().then((querySnapshot) => {
+        const doc = querySnapshot;
+        const selectedItem = {
+          coop_code: doc.data().coop_code,
+        };
+        return selectedItem;
       });
-      return res.status(200).send();
+      return res.status(200).send(response);
     } catch (error) {
+      console.log(error);
       return res.status(500).send(error);
     }
   })();
 });
 
-// GET all camera info
-app.get("/api/camera", (req, res) => {
+// GET users
+app.get("/api/users/:coop_id/users", isAuth, (req, res) => {
   (async () => {
     try {
-      const query = db.collection("camera");
+      const query = db
+        .collection("users")
+        .doc("/" + req.params.coop_id + "/")
+        .collection("users");
       const response = [];
       await query.get().then((querySnapshot) => {
         const docs = querySnapshot.docs;
         for (const doc of docs) {
           const selectedItem = {
-            id: doc.id,
-            box: doc.data().box,
-            coop: doc.data().coop,
+            name: doc.data().name,
+            email: doc.data().email,
           };
           response.push(selectedItem);
         }
@@ -78,33 +103,15 @@ app.get("/api/camera", (req, res) => {
   })();
 });
 
-// GET specific camera info
-app.get("/api/camera/:camera_id", jsonParser, (req, res) => {
+// DELETE user
+app.delete("/api/users/:coop_id/:email", isAuth, (req, res) => {
   (async () => {
     try {
-      const query = db.collection("camera").doc(req.params.camera_id);
-      const response = await query.get().then((querySnapshot) => {
-        const doc = querySnapshot;
-        const selectedItem = {
-          id: req.params.camera_id,
-          box: doc.data().box,
-          coop: doc.data().coop,
-        };
-        return selectedItem;
-      });
-      return res.status(200).send(response);
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send(error);
-    }
-  })();
-});
-
-// DELETE camera
-app.delete("/api/camera/:camera_id", jsonParser, (req, res) => {
-  (async () => {
-    try {
-      const document = db.collection("camera").doc(req.params.camera_id);
+      const document = db
+        .collection("users")
+        .doc("/" + req.params.coop_id + "/")
+        .collection("users")
+        .doc("/" + req.params.email + "/");
       await document.delete();
       return res.status(200).send();
     } catch (error) {
@@ -115,21 +122,21 @@ app.delete("/api/camera/:camera_id", jsonParser, (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// CHICKEN
+// CHICKEN TABLE
 
 // POST chicken entering coop
-app.post("/api/chicken", jsonParser, (req, res) => {
+app.post("/api/chicken", isAuth, (req, res) => {
   (async () => {
     try {
-      await db.collection("chicken").doc("/" + req.body.enter_date + "/").create({
-        box: req.body.box,
-        coop: req.body.coop,
-        enter_date: req.body.enter_date,
-        exit_date: null,
-        enter_mass: req.body.enter_mass,
-        exit_mass: null,
-      });
-      console.log("CHICKEN ENTERED");
+      await db
+        .collection("chicken")
+        .doc("/" + req.body.enter_date + "/")
+        .create({
+          box: req.body.box,
+          coop: req.body.coop,
+          enter_date: req.body.enter_date,
+          exit_date: null,
+        });
       return res.status(200).send();
     } catch (error) {
       return res.status(500).send(error);
@@ -137,15 +144,13 @@ app.post("/api/chicken", jsonParser, (req, res) => {
   })();
 });
 
-
 // PATCH chicken exiting coop
-app.patch("/api/chicken", jsonParser, (req, res) => {
+app.patch("/api/chicken", isAuth, (req, res) => {
   (async () => {
     try {
       const document = db.collection("chicken").doc(req.body.enter_date);
       await document.update({
         exit_date: req.body.exit_date,
-        exit_mass: req.body.exit_mass,
       });
       return res.status(200).send();
     } catch (error) {
@@ -155,7 +160,7 @@ app.patch("/api/chicken", jsonParser, (req, res) => {
 });
 
 // GET chicken data
-app.get("/api/chicken", (req, res) => {
+app.get("/api/chicken", isAuth, (req, res) => {
   if (req.query.numberOfRecords == undefined) {
     (async () => {
       try {
@@ -168,9 +173,7 @@ app.get("/api/chicken", (req, res) => {
               box: doc.data().box,
               coop: doc.data().coop,
               enter_date: doc.data().enter_date,
-              enter_mass: doc.data().enter_mass,
               exit_date: doc.data().exit_date,
-              exit_mass: doc.data().exit_mass,
             };
             response.push(selectedItem);
           }
@@ -182,11 +185,13 @@ app.get("/api/chicken", (req, res) => {
         return res.status(500).send(error);
       }
     })();
-  }
-  else {
+  } else {
     (async () => {
       try {
-        const query = db.collection("chicken").orderBy("enter_date", "desc").limit(parseInt(req.query.numberOfRecords));
+        const query = db
+          .collection("chicken")
+          .orderBy("enter_date", "desc")
+          .limit(parseInt(req.query.numberOfRecords));
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
@@ -195,9 +200,7 @@ app.get("/api/chicken", (req, res) => {
               box: doc.data().box,
               coop: doc.data().coop,
               enter_date: doc.data().enter_date,
-              enter_mass: doc.data().enter_mass,
               exit_date: doc.data().exit_date,
-              exit_mass: doc.data().exit_mass,
             };
             response.push(selectedItem);
           }
@@ -210,18 +213,18 @@ app.get("/api/chicken", (req, res) => {
       }
     })();
   }
-  });
+});
 
-
-  // GET chicken data between 2 dates
-app.get("/api/chicken/dates", (req, res) => {
+// GET chicken data between 2 dates
+app.get("/api/chicken/dates", isAuth, (req, res) => {
   if (req.query.numberOfRecords == undefined) {
     (async () => {
       try {
-        const query = db.collection("chicken")
-        .orderBy("enter_date", "desc")
-        .startAt(parseInt(req.query.end_date))
-        .endAt(parseInt(req.query.start_date));
+        const query = db
+          .collection("chicken")
+          .orderBy("enter_date", "desc")
+          .startAt(req.query.start_date)
+          .endAt(req.query.end_date);
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
@@ -231,9 +234,7 @@ app.get("/api/chicken/dates", (req, res) => {
               box: doc.data().box,
               coop: doc.data().coop,
               enter_date: doc.data().enter_date,
-              enter_mass: doc.data().enter_mass,
               exit_date: doc.data().exit_date,
-              exit_mass: doc.data().exit_mass,
             };
             response.push(selectedItem);
           }
@@ -245,15 +246,15 @@ app.get("/api/chicken/dates", (req, res) => {
         return res.status(500).send(error);
       }
     })();
-  }
-  else {
+  } else {
     (async () => {
       try {
-        const query = db.collection("chicken")
-        .orderBy("enter_date", "desc")
-        .startAt(parseInt(req.query.end_date))
-        .endAt(parseInt(req.query.start_date))
-        .limit(parseInt(req.query.numberOfRecords));
+        const query = db
+          .collection("chicken")
+          .orderBy("enter_date", "desc")
+          .startAt(req.query.start_date)
+          .endAt(req.query.end_date)
+          .limit(parseInt(req.query.numberOfRecords));
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
@@ -262,9 +263,7 @@ app.get("/api/chicken/dates", (req, res) => {
               box: doc.data().box,
               coop: doc.data().coop,
               enter_date: doc.data().enter_date,
-              enter_mass: doc.data().enter_mass,
               exit_date: doc.data().exit_date,
-              exit_mass: doc.data().exit_mass,
             };
             response.push(selectedItem);
           }
@@ -277,16 +276,21 @@ app.get("/api/chicken/dates", (req, res) => {
       }
     })();
   }
-  });
+});
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// BOX
+// BOX TABLE
 
 // POST box
-app.post("/api/box", jsonParser, (req, res) => {
+app.post("/api/box", isAuth, (req, res) => {
   (async () => {
     try {
-      await db.collection("box").doc("/" + req.body.box_id + "/").collection("boxData").doc("/" + "init data" + "/").create({})
+      await db
+        .collection("box")
+        .doc("/" + req.body.box_id + "/")
+        .collection("boxData")
+        .doc("/" + "init data" + "/")
+        .create({});
       return res.status(200).send();
     } catch (error) {
       return res.status(500).send(error);
@@ -295,15 +299,20 @@ app.post("/api/box", jsonParser, (req, res) => {
 });
 
 // POST box info
-app.post("/api/box/:box_id", jsonParser, (req, res) => {
+app.post("/api/box/:box_id", isAuth, (req, res) => {
   (async () => {
     try {
-      await db.collection("box").doc("/" + req.params.box_id + "/").collection("boxData").doc("/" + req.body.date + "/").create({
+      await db
+        .collection("box")
+        .doc("/" + req.params.box_id + "/")
+        .collection("boxData")
+        .doc("/" + req.body.date + "/")
+        .create({
           date: req.body.date,
-          hasEgg: req.body.hasEgg,
+          numberOfEggs: req.body.numberOfEggs,
           temperature: req.body.temperature,
           light: req.body.light,
-          humidity: req.body.humidity
+          humidity: req.body.humidity,
         });
       return res.status(200).send();
     } catch (error) {
@@ -311,24 +320,28 @@ app.post("/api/box/:box_id", jsonParser, (req, res) => {
       return res.status(500).send(error);
     }
   })();
-})
+});
 
 // GET specific box info
-app.get("/api/box/:box_id", (req, res) => {
+app.get("/api/box/:box_id", isAuth, (req, res) => {
   if (req.query.numberOfRecords == undefined) {
     (async () => {
       try {
-        const query = db.collection("box").doc("/" + req.params.box_id + "/").collection("boxData").orderBy("date", "desc");
+        const query = db
+          .collection("box")
+          .doc("/" + req.params.box_id + "/")
+          .collection("boxData")
+          .orderBy("date", "desc");
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
           for (const doc of docs) {
             const selectedItem = {
               date: doc.data().date,
-              hasEgg: doc.data().hasEgg,
+              numberOfEggs: doc.data().numberOfEggs,
               temperature: doc.data().temperature,
               light: doc.data().light,
-              humidity: doc.data().humidity
+              humidity: doc.data().humidity,
             };
             response.push(selectedItem);
           }
@@ -340,21 +353,25 @@ app.get("/api/box/:box_id", (req, res) => {
         return res.status(500).send(error);
       }
     })();
-  }
-  else {
+  } else {
     (async () => {
       try {
-        const query = db.collection("box").doc("/" + req.params.box_id + "/").collection("boxData").orderBy("date", "desc").limit(parseInt(req.query.numberOfRecords));
+        const query = db
+          .collection("box")
+          .doc("/" + req.params.box_id + "/")
+          .collection("boxData")
+          .orderBy("date", "desc")
+          .limit(parseInt(req.query.numberOfRecords));
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
           for (const doc of docs) {
             const selectedItem = {
               date: doc.data().date,
-              hasEgg: doc.data().hasEgg,
+              numberOfEggs: doc.data().numberOfEggs,
               temperature: doc.data().temperature,
               light: doc.data().light,
-              humidity: doc.data().humidity
+              humidity: doc.data().humidity,
             };
             response.push(selectedItem);
           }
@@ -367,29 +384,30 @@ app.get("/api/box/:box_id", (req, res) => {
       }
     })();
   }
-})
+});
 
 // GET specific box info between 2 dates
-app.get("/api/box/:box_id/dates", (req, res) => {
+app.get("/api/box/:box_id/dates", isAuth, (req, res) => {
   if (req.query.numberOfRecords == undefined) {
     (async () => {
       try {
-        const query = db.collection("box")
-        .doc("/" + req.params.box_id + "/")
-        .collection("boxData")
-        .orderBy("date", "desc")
-        .startAt(parseInt(req.query.end_date))
-        .endAt(parseInt(req.query.start_date));
+        const query = db
+          .collection("box")
+          .doc("/" + req.params.box_id + "/")
+          .collection("boxData")
+          .orderBy("date", "desc")
+          .startAt(req.query.start_date)
+          .endAt(req.query.end_date);
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
           for (const doc of docs) {
             const selectedItem = {
               date: doc.data().date,
-              hasEgg: doc.data().hasEgg,
+              numberOfEggs: doc.data().numberOfEggs,
               temperature: doc.data().temperature,
               light: doc.data().light,
-              humidity: doc.data().humidity
+              humidity: doc.data().humidity,
             };
             response.push(selectedItem);
           }
@@ -401,27 +419,27 @@ app.get("/api/box/:box_id/dates", (req, res) => {
         return res.status(500).send(error);
       }
     })();
-  }
-  else {
+  } else {
     (async () => {
       try {
-        const query = db.collection("box")
-        .doc("/" + req.params.box_id + "/")
-        .collection("boxData")
-        .orderBy("date", "desc")
-        .startAt(parseInt(req.query.end_date))
-        .endAt(parseInt(req.query.start_date))
-        .limit(parseInt(req.query.numberOfRecords));
+        const query = db
+          .collection("box")
+          .doc("/" + req.params.box_id + "/")
+          .collection("boxData")
+          .orderBy("date", "desc")
+          .startAt(req.query.start_date)
+          .endAt(req.query.end_date)
+          .limit(parseInt(req.query.numberOfRecords));
         const response = [];
         await query.get().then((querySnapshot) => {
           const docs = querySnapshot.docs;
           for (const doc of docs) {
             const selectedItem = {
               date: doc.data().date,
-              hasEgg: doc.data().hasEgg,
+              numberOfEggs: doc.data().numberOfEggs,
               temperature: doc.data().temperature,
               light: doc.data().light,
-              humidity: doc.data().humiditys
+              humidity: doc.data().humidity,
             };
             response.push(selectedItem);
           }
@@ -434,10 +452,10 @@ app.get("/api/box/:box_id/dates", (req, res) => {
       }
     })();
   }
-  })
+});
 
 // DELETE box
-app.delete("/api/box/:box_id", jsonParser, (req, res) => {
+app.delete("/api/box/:box_id", isAuth, (req, res) => {
   (async () => {
     try {
       const document = db.collection("box").doc(req.params.box_id);
@@ -450,7 +468,48 @@ app.delete("/api/box/:box_id", jsonParser, (req, res) => {
   })();
 });
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////
+//SETTINGS TABLE
+
+// GET settings
+app.get("/api/settings", isAuth, (req, res) => {
+  (async () => {
+    try {
+      const query = db.collection("settings").doc("settings");
+      const response = await query.get().then((querySnapshot) => {
+        const doc = querySnapshot;
+        const selectedItem = {
+          autoLight: doc.data().autoLight,
+          brightness: doc.data().brightness,
+          tempMax: doc.data().tempMax,
+          tempMin: doc.data().tempMin,
+        };
+        return selectedItem;
+      });
+      return res.status(200).send(response);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send(error);
+    }
+  })();
+});
+
+// PATCH settings
+app.patch("/api/settings", isAuth, (req, res) => {
+  (async () => {
+    try {
+      const document = db.collection("settings").doc("settings");
+      await document.update({
+        autoLight: req.body.autoLight,
+        brightness: req.body.brightness,
+        tempMax: req.body.tempMax,
+        tempMin: req.body.tempMin,
+      });
+      return res.status(200).send();
+    } catch (error) {
+      return res.status(500).send(error);
+    }
+  })();
+});
 
 exports.app = functions.https.onRequest(app);
