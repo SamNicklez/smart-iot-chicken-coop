@@ -1,6 +1,13 @@
 {
+  "type": "module",
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "node-fetch": "^2.6.9"
+    "@trbll/nodeimu": "^1.0.0",
+    "@trbll/sense-hat-led": "^1.0.2",
+    "firebase": "^9.17.2",
+    "fs": "^0.0.1-security",
+    "node-ble": "^1.9.0",
+    "node-webcam": "^0.8.1",
+    "pigpio": "^3.3.1",
+    "socket.io-client": "^4.6.1"
   }
 }
